@@ -1,4 +1,6 @@
 const generateBtn = document.getElementById("generateBtn");
+const stepSlider = document.getElementById("stepSlider");
+const stepValue = document.getElementById("stepValue");
 const statusText = document.getElementById("statusText");
 const previewStage = document.getElementById("previewStage");
 const previewImage = document.getElementById("previewImage");
@@ -12,11 +14,21 @@ const atlasPlaceholder = document.getElementById("atlasPlaceholder");
 const frameGrid = document.getElementById("frameGrid");
 
 let currentFrames = [];
-let selectedIndex = -1;
+
+function syncStepDisplay() {
+  const steps = Number(stepSlider.value);
+  const min = Number(stepSlider.min);
+  const max = Number(stepSlider.max);
+  const ratio = ((steps - min) / (max - min)) * 100;
+
+  stepValue.textContent = `${steps} steps`;
+  stepSlider.style.setProperty("--fill", `${ratio}%`);
+}
 
 function setBusy(isBusy) {
   document.body.classList.toggle("is-busy", isBusy);
   generateBtn.disabled = isBusy;
+  stepSlider.disabled = isBusy;
 }
 
 function setStatus(message) {
@@ -28,7 +40,6 @@ function selectFrame(index) {
     return;
   }
 
-  selectedIndex = index;
   const frame = currentFrames[index];
 
   previewImage.src = frame.url;
@@ -89,8 +100,9 @@ function showEmptyState() {
 }
 
 async function generate() {
+  const steps = Number(stepSlider.value);
   setBusy(true);
-  setStatus("Loading the model and walking from noise to meaning...");
+  setStatus(`Loading the model and walking from noise to meaning with ${steps} steps...`);
 
   try {
     const response = await fetch("/api/generate", {
@@ -99,7 +111,7 @@ async function generate() {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        steps: 50,
+        steps,
         seed: 7,
       }),
     });
@@ -129,5 +141,6 @@ async function generate() {
 }
 
 generateBtn.addEventListener("click", generate);
+stepSlider.addEventListener("input", syncStepDisplay);
+syncStepDisplay();
 showEmptyState();
-

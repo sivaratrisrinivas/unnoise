@@ -34,8 +34,31 @@
               <button id="generateBtn" class="generate-btn" type="button">
                 Generate progression
               </button>
+              <div class="slider-group">
+                <div class="slider-head">
+                  <label for="stepSlider">Denoising steps</label>
+                  <output id="stepValue" class="step-value" for="stepSlider">50 steps</output>
+                </div>
+                <input
+                  id="stepSlider"
+                  class="step-slider"
+                  type="range"
+                  min="10"
+                  max="100"
+                  step="10"
+                  value="50"
+                  aria-describedby="stepHint"
+                />
+                <div class="step-scale" aria-hidden="true">
+                  <span>10 faster</span>
+                  <span>100 cleaner</span>
+                </div>
+              </div>
               <p id="statusText" class="status" aria-live="polite">
                 Ready. Press the button to start the walk from noise.
+              </p>
+              <p id="stepHint" class="hint">
+                Fewer steps are faster and rougher. More steps are slower and usually cleaner.
               </p>
               <p class="hint">
                 The browser calls Python. Python runs the diffusion model and sends back every frame.
@@ -109,4 +132,3 @@
     </div>
   </body>
 </html>
-

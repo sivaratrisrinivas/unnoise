@@ -24,6 +24,8 @@ RUNS_DIR = OUTPUTS_DIR / "ui_runs"
 HOST = os.environ.get("HOST", "0.0.0.0")
 PORT = int(os.environ.get("PORT", "8000"))
 DEFAULT_STEPS = 50
+MIN_STEPS = 10
+MAX_STEPS = 100
 DEFAULT_SEED = 7
 generation_lock = threading.Lock()
 
@@ -66,8 +68,8 @@ def serve_file(handler: BaseHTTPRequestHandler, path: Path) -> None:
 
 
 def run_generation(steps: int, seed: int) -> dict:
-    if not 1 <= steps <= 100:
-        raise ValueError("steps must be between 1 and 100")
+    if not MIN_STEPS <= steps <= MAX_STEPS:
+        raise ValueError(f"steps must be between {MIN_STEPS} and {MAX_STEPS}")
 
     run_id = datetime.now(timezone.utc).strftime("%Y%m%d-%H%M%S") + "-" + uuid.uuid4().hex[:6]
     run_dir = RUNS_DIR / run_id
