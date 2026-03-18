@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Noise → Meaning</title>
+    <link rel="stylesheet" href="/styles.css" />
+    <script type="module" src="/app.js" defer></script>
+  </head>
+  <body>
+    <div class="page-shell">
+      <div class="backdrop backdrop-a"></div>
+      <div class="backdrop backdrop-b"></div>
+      <div class="grain"></div>
+
+      <main class="layout">
+        <section class="hero panel">
+          <div class="hero-copy">
+            <p class="eyebrow">CPU-only diffusion lab</p>
+            <h1>Noise <span aria-hidden="true">→</span> Meaning</h1>
+            <p class="lede">
+              Watch a tiny DDPM peel structure out of pure noise, one denoising step at a time.
+            </p>
+          </div>
+
+          <div class="hero-side">
+            <div class="badge-row">
+              <span class="badge">google/ddpm-cifar10-32</span>
+              <span class="badge">32 × 32</span>
+              <span class="badge">CPU only</span>
+            </div>
+
+            <div class="control-card">
+              <button id="generateBtn" class="generate-btn" type="button">
+                Generate progression
+              </button>
+              <p id="statusText" class="status" aria-live="polite">
+                Ready. Press the button to start the walk from noise.
+              </p>
+              <p class="hint">
+                The browser calls Python. Python runs the diffusion model and sends back every frame.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <section class="workspace">
+          <article class="preview panel">
+            <div class="panel-title">
+              <div>
+                <p class="section-label">Selected frame</p>
+                <h2 id="selectedLabel">Waiting for a run</h2>
+              </div>
+              <p id="runMeta" class="meta">Nothing generated yet.</p>
+            </div>
+
+            <div class="preview-stage" id="previewStage" data-empty="true">
+              <div class="placeholder" id="previewPlaceholder">
+                <span class="placeholder-kicker">Preview</span>
+                <strong>Press generate to summon the first diffusion walk.</strong>
+                <span>We will keep the browser lean and let Python do the work.</span>
+              </div>
+              <img id="previewImage" alt="Selected diffusion frame" hidden />
+            </div>
+
+            <div class="preview-footer">
+              <div>
+                <span class="footer-label">Frame</span>
+                <strong id="frameName">-</strong>
+              </div>
+              <div>
+                <span class="footer-label">Final image</span>
+                <strong id="finalName">-</strong>
+              </div>
+            </div>
+          </article>
+
+          <aside class="atlas panel">
+            <div class="panel-title">
+              <div>
+                <p class="section-label">Progress atlas</p>
+                <h2>Whole trajectory</h2>
+              </div>
+              <p class="meta">A single sheet of the full walk.</p>
+            </div>
+            <img
+              id="contactSheet"
+              class="atlas-image"
+              alt="Contact sheet showing every denoising frame"
+              hidden
+            />
+            <div id="atlasPlaceholder" class="atlas-placeholder">
+              The contact sheet will appear here after a run.
+            </div>
+          </aside>
+        </section>
+
+        <section class="timeline panel">
+          <div class="panel-title">
+            <div>
+              <p class="section-label">Frame timeline</p>
+              <h2>Click any step to inspect it</h2>
+            </div>
+            <p class="meta">The initial frame is pure noise. The final one is the revealed image.</p>
+          </div>
+          <div id="frameGrid" class="frame-grid" aria-live="polite"></div>
+        </section>
+      </main>
+    </div>
+  </body>
+</html>
+
