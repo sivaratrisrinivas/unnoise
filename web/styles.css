@@ -107,7 +107,7 @@ body::after {
   gap: 14px;
 }
 
-.kicker,
+.brand,
 .step-scale,
 .frame-meta {
   margin: 0;
@@ -116,7 +116,7 @@ body::after {
   font-size: 0.74rem;
 }
 
-.kicker {
+.brand {
   color: var(--accent);
 }
 
@@ -148,13 +148,51 @@ body::after {
 
 .control-card {
   width: min(100%, 460px);
-  padding: 20px;
+  padding: 22px;
   border: 1px solid var(--line);
   border-radius: var(--radius-xl);
   background: linear-gradient(180deg, var(--panel), rgba(255, 255, 255, 0.02));
   box-shadow: var(--shadow);
   display: grid;
-  gap: 14px;
+  gap: 16px;
+}
+
+.field {
+  display: grid;
+  gap: 10px;
+}
+
+.field label {
+  color: var(--muted);
+  font-size: 0.82rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.text-input {
+  width: 100%;
+  min-height: 52px;
+  padding: 14px 16px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--text);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
+  transition:
+    border-color 180ms var(--ease-out),
+    background-color 180ms var(--ease-out),
+    box-shadow 180ms var(--ease-out);
+}
+
+.text-input::placeholder {
+  color: rgba(245, 240, 232, 0.42);
+}
+
+.text-input:focus-visible {
+  outline: 2px solid rgba(186, 255, 119, 0.95);
+  outline-offset: 4px;
+  border-color: rgba(186, 255, 119, 0.32);
+  background: rgba(255, 255, 255, 0.05);
 }
 
 .slider-head {
@@ -287,8 +325,7 @@ body::after {
   transform: scale(0.97);
 }
 
-.generate-btn:focus-visible,
-.frame-stage:focus-visible {
+.generate-btn:focus-visible {
   outline: 2px solid rgba(186, 255, 119, 0.95);
   outline-offset: 4px;
 }
@@ -299,21 +336,20 @@ body::after {
   box-shadow: none;
 }
 
-.step-note,
 .status,
 .frame-meta {
   color: var(--muted);
   line-height: 1.6;
 }
 
-.step-note {
+.fineprint {
   margin: 0;
   max-width: 32rem;
   color: var(--faint);
   font-size: 0.94rem;
 }
 
-.step-note.is-error {
+.fineprint.is-error {
   color: #ffb0b0;
 }
 
@@ -346,18 +382,7 @@ body::after {
   overflow: hidden;
   display: grid;
   place-items: center;
-  transition:
-    transform 150ms var(--ease-out),
-    border-color 180ms var(--ease-out),
-    box-shadow 180ms var(--ease-out);
-}
-
-.frame-stage:hover {
-  border-color: var(--line-strong);
-}
-
-.frame-stage:active {
-  transform: scale(0.99);
+  transition: border-color 180ms var(--ease-out);
 }
 
 .frame-sheen {

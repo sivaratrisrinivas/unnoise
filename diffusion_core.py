@@ -23,7 +23,22 @@ class SavedProgression:
 @lru_cache(maxsize=1)
 def load_pipeline() -> DDPMPipeline:
     """Load the CPU-only DDPM pipeline once per process."""
-    pipe = DDPMPipeline.from_pretrained(MODEL_ID)
+    loader_kwargs = {
+        "low_cpu_mem_usage": False,
+        "use_safetensors": False,
+    }
+
+    try:
+        pipe = DDPMPipeline.from_pretrained(
+            MODEL_ID,
+            local_files_only=True,
+            **loader_kwargs,
+        )
+    except (FileNotFoundError, OSError):
+        pipe = DDPMPipeline.from_pretrained(
+            MODEL_ID,
+            **loader_kwargs,
+        )
     pipe = pipe.to("cpu")
     pipe.set_progress_bar_config(disable=True)
     return pipe
@@ -138,4 +153,3 @@ def save_progression_frames(frames: list[Image.Image], run_dir: Path) -> SavedPr
         frame_paths=frame_paths,
         final_image_path=final_image_path,
     )
-

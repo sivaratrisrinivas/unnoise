@@ -3,68 +3,75 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Noise → Meaning</title>
+    <title>unnoise</title>
     <link rel="stylesheet" href="/styles.css" />
     <script type="module" src="/app.js" defer></script>
   </head>
   <body data-view="setup">
     <main class="app-shell">
       <section id="setupScreen" class="screen screen-setup" aria-labelledby="heroTitle">
-        <p class="kicker">CPU-only diffusion lab</p>
-        <h1 id="heroTitle">Noise <span aria-hidden="true">→</span> Meaning</h1>
-        <p class="lede">
-          Choose how many denoising steps you want, then generate one walk from pure noise.
-        </p>
+        <p class="brand">unnoise</p>
+        <h1 id="heroTitle">Noise becomes structure.</h1>
+        <p class="lede">A tiny CPU diffusion ritual that turns one seed into a visible walk.</p>
 
         <div class="control-card">
-          <div class="slider-head">
-            <label for="stepSlider">Denoising steps</label>
-            <output id="stepValue" class="step-value" for="stepSlider">50</output>
+          <div class="field">
+            <label for="seedInput">Seed phrase</label>
+            <input
+              id="seedInput"
+              class="text-input"
+              type="text"
+              placeholder='Try something like "storm over a city"'
+              autocomplete="off"
+              spellcheck="false"
+            />
           </div>
 
-          <input
-            id="stepSlider"
-            class="step-slider"
-            type="range"
-            min="10"
-            max="100"
-            step="10"
-            value="50"
-          />
+          <div class="field">
+            <div class="slider-head">
+              <label for="stepSlider">Denoising steps</label>
+              <output id="stepValue" class="step-value" for="stepSlider">100</output>
+            </div>
 
-          <div class="step-scale" aria-hidden="true">
-            <span>10</span>
-            <span>100</span>
+            <input
+              id="stepSlider"
+              class="step-slider"
+              type="range"
+              min="10"
+              max="100"
+              step="10"
+              value="100"
+            />
+
+            <div class="step-scale" aria-hidden="true">
+              <span>10 faster</span>
+              <span>100 cleaner</span>
+            </div>
           </div>
 
           <button id="generateBtn" class="generate-btn" type="button">
-            Generate walk
+            Generate
           </button>
         </div>
 
-        <p id="stepNote" class="step-note">The model runs on CPU and starts from noise.</p>
+        <p id="setupMessage" class="fineprint">Any text works. It becomes the seed for the noise.</p>
       </section>
 
       <section id="loadingScreen" class="screen screen-loading" hidden aria-live="polite">
         <div class="loader" aria-hidden="true"></div>
+        <p class="brand">unnoise</p>
         <h2>Walking from noise to meaning.</h2>
         <p id="statusText" class="status">Loading the model.</p>
       </section>
 
-      <section id="revealScreen" class="screen screen-reveal" hidden>
-        <button
-          id="frameStage"
-          class="frame-stage"
-          type="button"
-          aria-label="Advance to the next frame"
-        >
-          <span class="frame-sheen" aria-hidden="true"></span>
+      <section id="revealScreen" class="screen screen-reveal" hidden aria-live="polite">
+        <div class="frame-stage" aria-label="Diffusion frame" aria-live="polite">
           <div id="previewPlaceholder" class="placeholder">
             <span class="placeholder-kicker">Reveal</span>
-            <strong>Click the frame to step forward.</strong>
+            <strong>The final image will emerge here.</strong>
           </div>
           <img id="previewImage" alt="Diffusion frame" hidden />
-        </button>
+        </div>
 
         <p class="frame-meta">
           <span id="frameLabel">noise</span>

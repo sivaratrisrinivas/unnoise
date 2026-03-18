@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import hashlib
 import mimetypes
 import os
 import threading
@@ -50,7 +51,10 @@ def write_response(handler: BaseHTTPRequestHandler, status: int, content: bytes,
     handler.send_header("Content-Length", str(len(content)))
     handler.send_header("Cache-Control", "no-store")
     handler.end_headers()
-    handler.wfile.write(content)
+    try:
+        handler.wfile.write(content)
+    except (BrokenPipeError, ConnectionResetError):
+        return
 
 
 def write_json(handler: BaseHTTPRequestHandler, status: int, payload: dict) -> None:
@@ -65,6 +69,15 @@ def serve_file(handler: BaseHTTPRequestHandler, path: Path) -> None:
     content_type, _ = mimetypes.guess_type(path.name)
     content = path.read_bytes()
     write_response(handler, HTTPStatus.OK, content, content_type or "application/octet-stream")
+
+
+def derive_seed(seed_text: str | None, fallback: int) -> int:
+    cleaned = (seed_text or "").strip()
+    if not cleaned:
+        return fallback
+
+    digest = hashlib.sha256(cleaned.encode("utf-8")).digest()
+    return int.from_bytes(digest[:8], "big") & 0x7FFFFFFFFFFFFFFF
 
 
 def run_generation(steps: int, seed: int) -> dict:
@@ -133,7 +146,7 @@ class NoiseMeaningHandler(BaseHTTPRequestHandler):
         content_length = int(self.headers.get("Content-Length", "0"))
         payload = json.loads(self.rfile.read(content_length) or b"{}")
         steps = int(payload.get("steps", DEFAULT_STEPS))
-        seed = int(payload.get("seed", DEFAULT_SEED))
+        seed = derive_seed(payload.get("seed_text"), int(payload.get("seed", DEFAULT_SEED)))
 
         if not generation_lock.acquire(blocking=False):
             write_json(self, HTTPStatus.CONFLICT, {"error": "Generation already in progress"})

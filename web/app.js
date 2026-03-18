@@ -2,18 +2,17 @@ const setupScreen = document.getElementById("setupScreen");
 const loadingScreen = document.getElementById("loadingScreen");
 const revealScreen = document.getElementById("revealScreen");
 const generateBtn = document.getElementById("generateBtn");
+const seedInput = document.getElementById("seedInput");
 const stepSlider = document.getElementById("stepSlider");
 const stepValue = document.getElementById("stepValue");
-const stepNote = document.getElementById("stepNote");
+const setupMessage = document.getElementById("setupMessage");
 const statusText = document.getElementById("statusText");
-const frameStage = document.getElementById("frameStage");
 const previewImage = document.getElementById("previewImage");
 const previewPlaceholder = document.getElementById("previewPlaceholder");
 const frameLabel = document.getElementById("frameLabel");
 const frameCounter = document.getElementById("frameCounter");
 
 let currentFrames = [];
-let currentIndex = 0;
 
 function syncStepDisplay() {
   const steps = Number(stepSlider.value);
@@ -27,6 +26,7 @@ function syncStepDisplay() {
 
 function setBusy(isBusy) {
   generateBtn.disabled = isBusy;
+  seedInput.disabled = isBusy;
   stepSlider.disabled = isBusy;
 }
 
@@ -37,35 +37,37 @@ function showScreen(screen) {
   document.body.dataset.view = screen;
 }
 
-function resetToSetup(message = "The model runs on CPU and starts from noise.", isError = false) {
+function resetToSetup(message = "Any text works. It becomes the seed for the noise.", isError = false) {
   currentFrames = [];
-  currentIndex = 0;
   previewImage.hidden = true;
   previewImage.removeAttribute("src");
   previewPlaceholder.hidden = false;
   frameLabel.textContent = "noise";
   frameCounter.textContent = "1 / 1";
-  frameStage.setAttribute("aria-label", "Generate a new walk");
-  stepNote.textContent = message;
-  stepNote.classList.toggle("is-error", isError);
+  setupMessage.textContent = message;
+  setupMessage.classList.toggle("is-error", isError);
   setBusy(false);
   showScreen("setup");
 }
 
 function showLoading(message) {
   statusText.textContent = message;
+  statusText.classList.remove("is-error");
   showScreen("loading");
 }
 
 function animateFrame() {
   previewImage.style.animation = "none";
-  previewImage.offsetHeight; // Force reflow so the next frame can animate in.
-  previewImage.style.animation = "frame-pop 240ms var(--ease-out) both";
+  previewImage.offsetHeight; // Force a reflow so the new frame can animate in.
+  previewImage.style.animation = "frame-pop 220ms var(--ease-out) both";
+}
+
+function frameDelay(totalFrames) {
+  return Math.max(55, Math.min(140, Math.round(9000 / totalFrames)));
 }
 
 function renderFrame(index) {
   const frame = currentFrames[index];
-  currentIndex = index;
 
   previewPlaceholder.hidden = true;
   previewImage.hidden = false;
@@ -75,31 +77,27 @@ function renderFrame(index) {
 
   frameLabel.textContent = frame.label;
   frameCounter.textContent = `${index + 1} / ${currentFrames.length}`;
-  frameStage.setAttribute(
-    "aria-label",
-    index < currentFrames.length - 1
-      ? `Advance to ${currentFrames[index + 1].label}`
-      : "Return to the start"
-  );
-  showScreen("reveal");
-  frameStage.focus({ preventScroll: true });
 }
 
-function advanceFrame() {
-  if (!currentFrames.length) {
-    return;
-  }
+async function playFrames() {
+  const delay = frameDelay(currentFrames.length);
 
-  if (currentIndex < currentFrames.length - 1) {
-    renderFrame(currentIndex + 1);
-    return;
-  }
+  for (let index = 0; index < currentFrames.length; index += 1) {
+    renderFrame(index);
 
-  resetToSetup();
+    if (index < currentFrames.length - 1) {
+      await new Promise((resolve) => {
+        window.setTimeout(resolve, delay);
+      });
+    }
+  }
 }
 
 async function generate() {
   const steps = Number(stepSlider.value);
+  const seedText = seedInput.value.trim();
+  const phrase = seedText || "unnoise";
+
   setBusy(true);
   showLoading(`Running ${steps} denoising steps on CPU.`);
 
@@ -111,7 +109,7 @@ async function generate() {
       },
       body: JSON.stringify({
         steps,
-        seed: 7,
+        seed_text: phrase,
       }),
     });
 
@@ -126,7 +124,8 @@ async function generate() {
       throw new Error("No frames were returned.");
     }
 
-    renderFrame(0);
+    showScreen("reveal");
+    await playFrames();
   } catch (error) {
     console.error(error);
     resetToSetup(error.message, true);
@@ -137,19 +136,6 @@ async function generate() {
 
 generateBtn.addEventListener("click", generate);
 stepSlider.addEventListener("input", syncStepDisplay);
-frameStage.addEventListener("click", advanceFrame);
-window.addEventListener("keydown", (event) => {
-  if (document.body.dataset.view !== "reveal") {
-    return;
-  }
-
-  if (event.key === "ArrowRight" || event.key === " " || event.key === "Enter") {
-    event.preventDefault();
-    advanceFrame();
-  } else if (event.key === "Escape") {
-    resetToSetup();
-  }
-});
 
 syncStepDisplay();
 resetToSetup();

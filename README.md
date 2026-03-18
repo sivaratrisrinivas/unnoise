@@ -154,8 +154,8 @@ What this step does:
 - starts a small Python HTTP server
 - serves the custom HTML page
 - runs the model when you press the button
-- shows one screen for setup and one screen for the reveal
-- lets you click the image to move forward one frame at a time
+- shows one screen for setup and one autoplay reveal
+- keeps the browser focused on one thing at a time
 
 Why this step matters:
 
@@ -175,9 +175,9 @@ Then open:
 
 What the page shows:
 
-- a setup screen with one slider and one button
-- a reveal screen with one image that advances by click
-- a short status line while the model is running
+- a setup screen with a seed phrase field, a step slider, and one button
+- a reveal screen that plays the frames automatically
+- a short loading line while the model is running
 
 ### Step 6: Change The Number Of Denoising Steps
 
@@ -186,15 +186,19 @@ What this step does:
 - adds a slider in the UI
 - lets you choose between `10` and `100` denoising steps
 - sends that value to Python when you click generate
+- lets you type any phrase, then uses that phrase as the seed for the random noise
 
 Why this step matters:
 
 - fewer steps are faster but rougher
 - more steps are slower but usually cleaner and more structured
 - this makes the tradeoff visible instead of theoretical
+- the phrase is still just a seed because `google/ddpm-cifar10-32` is an unconditional model
+- that keeps us inside the lightweight CPU-only constraint
 
 How to use it:
 
+- type any phrase you want
 - move the slider before you click generate
 - try a smaller value like `10`
 - then try a larger value like `100`
@@ -207,6 +211,7 @@ What to look for:
 - the difference is easiest to notice in the middle frames
 - the browser shows one starting noise frame plus one frame for each denoising step
 - that means `10` steps gives you `11` frames, and `100` steps gives you `101` frames
+- the browser auto-plays the frames, so you can just watch the reveal happen
 
 ## Project Files
 
@@ -222,13 +227,13 @@ What to look for:
 ## What Happens When You Click Generate
 
 1. The browser reads the step value from the slider.
-2. The browser sends that step count to Python.
+2. The browser sends the step count and seed phrase to Python.
 3. Python loads the cached DDPM pipeline.
 4. Python starts from pure noise.
 5. Python runs the denoising loop one step at a time.
 6. Python saves every frame and the final image.
 7. Python sends the list of frame URLs back to the browser.
-8. The browser shows the first frame, then you click the image to move forward one step at a time.
+8. The browser auto-plays the frames from noise to the final image.
 
 ## Run It Locally
 
