@@ -15,7 +15,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import unquote, urlparse
 
-from diffusion_core import capture_progression, frame_label, save_progression_assets
+from diffusion_core import capture_progression, frame_label, save_progression_frames
 
 ROOT = Path(__file__).resolve().parent
 WEB_DIR = ROOT / "web"
@@ -77,7 +77,7 @@ def run_generation(steps: int, seed: int) -> dict:
 
     start = time.perf_counter()
     frames = capture_progression(steps, seed, show_progress_bar=False)
-    assets = save_progression_assets(frames, run_dir)
+    assets = save_progression_frames(frames, run_dir)
     elapsed_seconds = round(time.perf_counter() - start, 2)
 
     base_url = f"/outputs/ui_runs/{run_id}"
@@ -94,7 +94,6 @@ def run_generation(steps: int, seed: int) -> dict:
             for index, url in enumerate(frame_urls)
         ],
         "final_image_url": f"{base_url}/final_image.png",
-        "contact_sheet_url": f"{base_url}/contact_sheet.png",
     }
 
 

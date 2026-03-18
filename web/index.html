@@ -7,128 +7,71 @@
     <link rel="stylesheet" href="/styles.css" />
     <script type="module" src="/app.js" defer></script>
   </head>
-  <body>
-    <div class="page-shell">
-      <div class="backdrop backdrop-a"></div>
-      <div class="backdrop backdrop-b"></div>
-      <div class="grain"></div>
+  <body data-view="setup">
+    <main class="app-shell">
+      <section id="setupScreen" class="screen screen-setup" aria-labelledby="heroTitle">
+        <p class="kicker">CPU-only diffusion lab</p>
+        <h1 id="heroTitle">Noise <span aria-hidden="true">→</span> Meaning</h1>
+        <p class="lede">
+          Choose how many denoising steps you want, then generate one walk from pure noise.
+        </p>
 
-      <main class="layout">
-        <section class="hero panel">
-          <div class="hero-copy">
-            <p class="eyebrow">CPU-only diffusion lab</p>
-            <h1>Noise <span aria-hidden="true">→</span> Meaning</h1>
-            <p class="lede">
-              Watch a tiny DDPM peel structure out of pure noise, one denoising step at a time.
-            </p>
+        <div class="control-card">
+          <div class="slider-head">
+            <label for="stepSlider">Denoising steps</label>
+            <output id="stepValue" class="step-value" for="stepSlider">50</output>
           </div>
 
-          <div class="hero-side">
-            <div class="badge-row">
-              <span class="badge">google/ddpm-cifar10-32</span>
-              <span class="badge">32 × 32</span>
-              <span class="badge">CPU only</span>
-            </div>
+          <input
+            id="stepSlider"
+            class="step-slider"
+            type="range"
+            min="10"
+            max="100"
+            step="10"
+            value="50"
+          />
 
-            <div class="control-card">
-              <button id="generateBtn" class="generate-btn" type="button">
-                Generate progression
-              </button>
-              <div class="slider-group">
-                <div class="slider-head">
-                  <label for="stepSlider">Denoising steps</label>
-                  <output id="stepValue" class="step-value" for="stepSlider">50 steps</output>
-                </div>
-                <input
-                  id="stepSlider"
-                  class="step-slider"
-                  type="range"
-                  min="10"
-                  max="100"
-                  step="10"
-                  value="50"
-                  aria-describedby="stepHint"
-                />
-                <div class="step-scale" aria-hidden="true">
-                  <span>10 faster</span>
-                  <span>100 cleaner</span>
-                </div>
-              </div>
-              <p id="statusText" class="status" aria-live="polite">
-                Ready. Press the button to start the walk from noise.
-              </p>
-              <p id="stepHint" class="hint">
-                Fewer steps are faster and rougher. More steps are slower and usually cleaner.
-              </p>
-              <p class="hint">
-                The browser calls Python. Python runs the diffusion model and sends back every frame.
-              </p>
-            </div>
+          <div class="step-scale" aria-hidden="true">
+            <span>10</span>
+            <span>100</span>
           </div>
-        </section>
 
-        <section class="workspace">
-          <article class="preview panel">
-            <div class="panel-title">
-              <div>
-                <p class="section-label">Selected frame</p>
-                <h2 id="selectedLabel">Waiting for a run</h2>
-              </div>
-              <p id="runMeta" class="meta">Nothing generated yet.</p>
-            </div>
+          <button id="generateBtn" class="generate-btn" type="button">
+            Generate walk
+          </button>
+        </div>
 
-            <div class="preview-stage" id="previewStage" data-empty="true">
-              <div class="placeholder" id="previewPlaceholder">
-                <span class="placeholder-kicker">Preview</span>
-                <strong>Press generate to summon the first diffusion walk.</strong>
-                <span>We will keep the browser lean and let Python do the work.</span>
-              </div>
-              <img id="previewImage" alt="Selected diffusion frame" hidden />
-            </div>
+        <p id="stepNote" class="step-note">The model runs on CPU and starts from noise.</p>
+      </section>
 
-            <div class="preview-footer">
-              <div>
-                <span class="footer-label">Frame</span>
-                <strong id="frameName">-</strong>
-              </div>
-              <div>
-                <span class="footer-label">Final image</span>
-                <strong id="finalName">-</strong>
-              </div>
-            </div>
-          </article>
+      <section id="loadingScreen" class="screen screen-loading" hidden aria-live="polite">
+        <div class="loader" aria-hidden="true"></div>
+        <h2>Walking from noise to meaning.</h2>
+        <p id="statusText" class="status">Loading the model.</p>
+      </section>
 
-          <aside class="atlas panel">
-            <div class="panel-title">
-              <div>
-                <p class="section-label">Progress atlas</p>
-                <h2>Whole trajectory</h2>
-              </div>
-              <p class="meta">A single sheet of the full walk.</p>
-            </div>
-            <img
-              id="contactSheet"
-              class="atlas-image"
-              alt="Contact sheet showing every denoising frame"
-              hidden
-            />
-            <div id="atlasPlaceholder" class="atlas-placeholder">
-              The contact sheet will appear here after a run.
-            </div>
-          </aside>
-        </section>
-
-        <section class="timeline panel">
-          <div class="panel-title">
-            <div>
-              <p class="section-label">Frame timeline</p>
-              <h2>Click any step to inspect it</h2>
-            </div>
-            <p class="meta">The initial frame is pure noise. The final one is the revealed image.</p>
+      <section id="revealScreen" class="screen screen-reveal" hidden>
+        <button
+          id="frameStage"
+          class="frame-stage"
+          type="button"
+          aria-label="Advance to the next frame"
+        >
+          <span class="frame-sheen" aria-hidden="true"></span>
+          <div id="previewPlaceholder" class="placeholder">
+            <span class="placeholder-kicker">Reveal</span>
+            <strong>Click the frame to step forward.</strong>
           </div>
-          <div id="frameGrid" class="frame-grid" aria-live="polite"></div>
-        </section>
-      </main>
-    </div>
+          <img id="previewImage" alt="Diffusion frame" hidden />
+        </button>
+
+        <p class="frame-meta">
+          <span id="frameLabel">noise</span>
+          <span aria-hidden="true">·</span>
+          <span id="frameCounter">1 / 1</span>
+        </p>
+      </section>
+    </main>
   </body>
 </html>

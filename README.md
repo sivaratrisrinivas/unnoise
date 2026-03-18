@@ -23,7 +23,7 @@ You end up with three things:
 
 1. A tiny Python script that generates one image from noise.
 2. A second script that saves every denoising step.
-3. A custom HTML/CSS/JavaScript UI that lets you run the model and inspect the progression.
+3. A custom HTML/CSS/JavaScript UI that keeps the screen focused on one thing at a time.
 
 ## Why This Project Exists
 
@@ -154,12 +154,13 @@ What this step does:
 - starts a small Python HTTP server
 - serves the custom HTML page
 - runs the model when you press the button
-- returns the saved frames to the browser
+- shows one screen for setup and one screen for the reveal
+- lets you click the image to move forward one frame at a time
 
 Why this step matters:
 
 - it makes the project feel interactive
-- it lets you inspect the progression without opening files manually
+- it reduces the number of things on screen at once
 - it keeps the browser simple and lets Python handle the model work
 
 How to run it:
@@ -174,10 +175,9 @@ Then open:
 
 What the page shows:
 
-- a generate button
-- a preview of the currently selected frame
-- a contact sheet of the whole run
-- a clickable timeline of frames
+- a setup screen with one slider and one button
+- a reveal screen with one image that advances by click
+- a short status line while the model is running
 
 ### Step 6: Change The Number Of Denoising Steps
 
@@ -228,7 +228,7 @@ What to look for:
 5. Python runs the denoising loop one step at a time.
 6. Python saves every frame and the final image.
 7. Python sends the list of frame URLs back to the browser.
-8. The browser shows the final frame, the contact sheet, and the clickable timeline.
+8. The browser shows the first frame, then you click the image to move forward one step at a time.
 
 ## Run It Locally
 

@@ -15,10 +15,9 @@ MODEL_ID = "google/ddpm-cifar10-32"
 
 
 @dataclass(frozen=True)
-class ProgressionAssets:
+class SavedProgression:
     frame_paths: list[Path]
     final_image_path: Path
-    contact_sheet_path: Path
 
 
 @lru_cache(maxsize=1)
@@ -121,8 +120,8 @@ def build_contact_sheet(
     return canvas
 
 
-def save_progression_assets(frames: list[Image.Image], run_dir: Path) -> ProgressionAssets:
-    """Save a full progression run to disk and return the created file paths."""
+def save_progression_frames(frames: list[Image.Image], run_dir: Path) -> SavedProgression:
+    """Save the frame sequence and the final image for a progression run."""
     frames_dir = run_dir / "frames"
     frames_dir.mkdir(parents=True, exist_ok=True)
 
@@ -135,12 +134,8 @@ def save_progression_assets(frames: list[Image.Image], run_dir: Path) -> Progres
     final_image_path = run_dir / "final_image.png"
     frames[-1].save(final_image_path)
 
-    contact_sheet_path = run_dir / "contact_sheet.png"
-    build_contact_sheet(frames).save(contact_sheet_path)
-
-    return ProgressionAssets(
+    return SavedProgression(
         frame_paths=frame_paths,
         final_image_path=final_image_path,
-        contact_sheet_path=contact_sheet_path,
     )
 
