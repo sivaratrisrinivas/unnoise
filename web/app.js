@@ -11,6 +11,7 @@ const previewImage = document.getElementById("previewImage");
 const previewPlaceholder = document.getElementById("previewPlaceholder");
 const frameLabel = document.getElementById("frameLabel");
 const frameCounter = document.getElementById("frameCounter");
+const resetBtn = document.getElementById("resetBtn");
 
 let currentFrames = [];
 
@@ -28,6 +29,7 @@ function setBusy(isBusy) {
   generateBtn.disabled = isBusy;
   seedInput.disabled = isBusy;
   stepSlider.disabled = isBusy;
+  resetBtn.disabled = isBusy;
 }
 
 function showScreen(screen) {
@@ -44,6 +46,7 @@ function resetToSetup(message = "Any text works. It becomes the seed for the noi
   previewPlaceholder.hidden = false;
   frameLabel.textContent = "noise";
   frameCounter.textContent = "1 / 1";
+  resetBtn.hidden = true;
   setupMessage.textContent = message;
   setupMessage.classList.toggle("is-error", isError);
   setBusy(false);
@@ -93,6 +96,11 @@ async function playFrames() {
   }
 }
 
+function showResetAction() {
+  resetBtn.hidden = false;
+  resetBtn.focus({ preventScroll: true });
+}
+
 async function generate() {
   const steps = Number(stepSlider.value);
   const seedText = seedInput.value.trim();
@@ -126,6 +134,7 @@ async function generate() {
 
     showScreen("reveal");
     await playFrames();
+    showResetAction();
   } catch (error) {
     console.error(error);
     resetToSetup(error.message, true);
@@ -136,6 +145,7 @@ async function generate() {
 
 generateBtn.addEventListener("click", generate);
 stepSlider.addEventListener("input", syncStepDisplay);
+resetBtn.addEventListener("click", resetToSetup);
 
 syncStepDisplay();
 resetToSetup();

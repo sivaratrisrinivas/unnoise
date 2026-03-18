@@ -448,6 +448,35 @@ body[data-view="reveal"] .frame-sheen {
   color: var(--accent);
 }
 
+.home-btn {
+  padding: 12px 18px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.22);
+  transition:
+    transform 150ms var(--ease-out),
+    border-color 180ms var(--ease-out),
+    background-color 180ms var(--ease-out);
+}
+
+.home-btn:hover {
+  border-color: var(--line-strong);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.home-btn:active {
+  transform: scale(0.97);
+}
+
+.home-btn:focus-visible {
+  outline: 2px solid rgba(186, 255, 119, 0.95);
+  outline-offset: 4px;
+}
+
 [hidden] {
   display: none !important;
 }
