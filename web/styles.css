@@ -370,7 +370,7 @@ body::after {
 
 .frame-stage {
   position: relative;
-  width: min(100%, 640px);
+  width: min(100%, 384px);
   aspect-ratio: 1;
   padding: 0;
   border: 1px solid var(--line);
@@ -429,8 +429,8 @@ body[data-view="reveal"] .frame-sheen {
   width: 100%;
   height: 100%;
   object-fit: contain;
-  image-rendering: pixelated;
-  image-rendering: crisp-edges;
+  image-rendering: auto;
+  filter: contrast(1.05) saturate(1.04);
 }
 
 .frame-meta {
