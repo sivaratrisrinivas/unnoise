@@ -7,7 +7,7 @@ from diffusers import DDPMPipeline
 
 MODEL_ID = "google/ddpm-cifar10-32"
 OUTPUT_DIR = Path("outputs")
-OUTPUT_PATH = OUTPUT_DIR / "01_single_image.png"
+OUTPUT_PATH = OUTPUT_DIR / "generate_single_image.png"
 NUM_INFERENCE_STEPS = 50
 SEED = 7
 
