@@ -8,6 +8,7 @@ from dataclasses import dataclass
 from functools import lru_cache
 import os
 from pathlib import Path
+import re
 from typing import Literal
 
 import torch
@@ -25,12 +26,106 @@ MAX_STEPS = 20
 DEFAULT_SEED = 7
 DEFAULT_GUIDANCE_SCALE = 7.5
 HF_TOKEN_FILE = Path(__file__).resolve().parent / ".env.local"
+PROMPT_MODE_DIRECT = "prompt"
+PROMPT_MODE_THOUGHT_COMPLETION = "thought_completion"
+SUPPORTED_PROMPT_MODES = (PROMPT_MODE_DIRECT, PROMPT_MODE_THOUGHT_COMPLETION)
+DEFAULT_PROMPT = "a red bicycle on a rainy street"
+DEFAULT_THOUGHT_FRAGMENT = "a man about to fall..."
+_TRAILING_FRAGMENT_MARKS = " \t\r\n.!?,;:-"
 
 
 @dataclass(frozen=True)
 class SavedProgression:
     frame_paths: list[Path]
     final_image_path: Path
+
+
+@dataclass(frozen=True)
+class PromptConditioning:
+    mode: str
+    mode_label: str
+    seed_text: str
+    input_label: str
+    completion_caption: str
+    resolved_prompt: str
+
+
+def _clean_seed_text(seed_text: str) -> str:
+    collapsed = re.sub(r"\s+", " ", seed_text or "").strip()
+    return collapsed
+
+
+def _normalize_leading_article(text: str) -> str:
+    for article in ("A ", "An ", "The "):
+        if text.startswith(article):
+            return article.lower() + text[len(article) :]
+    return text
+
+
+def _strip_fragment_tail(text: str) -> str:
+    return text.rstrip(_TRAILING_FRAGMENT_MARKS).strip()
+
+
+def _thought_completion_caption(seed_text: str) -> str:
+    fragment = _strip_fragment_tail(_clean_seed_text(seed_text))
+    if not fragment:
+        fragment = _strip_fragment_tail(DEFAULT_THOUGHT_FRAGMENT)
+
+    lowered = fragment.lower()
+    for marker in (" about to ", " on the verge of "):
+        if marker in lowered:
+            marker_index = lowered.index(marker)
+            subject = _normalize_leading_article(fragment[:marker_index].strip())
+            action = fragment[marker_index + len(marker) :].strip()
+            if subject and action:
+                return f"The split second after {subject} begins to {action}"
+
+    if lowered.startswith("about to "):
+        action = fragment[len("about to ") :].strip()
+        if action:
+            return f"The split second after someone begins to {action}"
+
+    if lowered.startswith("almost "):
+        action = fragment[len("almost ") :].strip()
+        if action:
+            return f"The moment when someone finally {action}"
+
+    return f"The next plausible moment after {_normalize_leading_article(fragment)}"
+
+
+def condition_prompt(seed_text: str, *, mode: str = PROMPT_MODE_DIRECT) -> PromptConditioning:
+    if mode not in SUPPORTED_PROMPT_MODES:
+        supported = ", ".join(SUPPORTED_PROMPT_MODES)
+        raise ValueError(f"mode must be one of: {supported}")
+
+    cleaned_seed_text = _clean_seed_text(seed_text)
+    if mode == PROMPT_MODE_DIRECT:
+        resolved_seed_text = cleaned_seed_text or DEFAULT_PROMPT
+        return PromptConditioning(
+            mode=mode,
+            mode_label="Direct Prompt",
+            seed_text=resolved_seed_text,
+            input_label="Prompt",
+            completion_caption="Diffusion follows the prompt directly.",
+            resolved_prompt=resolved_seed_text,
+        )
+
+    resolved_seed_text = cleaned_seed_text or DEFAULT_THOUGHT_FRAGMENT
+    completion_caption = _thought_completion_caption(resolved_seed_text)
+    resolved_prompt = (
+        f"{completion_caption}. "
+        "Show the consequence already unfolding in a single cinematic still with a clear subject, "
+        "coherent anatomy, believable physics, environmental reaction, rich spatial context, "
+        "natural lighting, and no text."
+    )
+    return PromptConditioning(
+        mode=mode,
+        mode_label="Thought Completion",
+        seed_text=resolved_seed_text,
+        input_label="Thought Fragment",
+        completion_caption=completion_caption,
+        resolved_prompt=resolved_prompt,
+    )
 
 
 def _read_hf_token() -> str | None:

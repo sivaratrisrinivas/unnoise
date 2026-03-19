@@ -1,11 +1,17 @@
-"""Capture every denoising step of a prompt-driven diffusion run on CPU."""
+"""Capture every denoising step of a conditioned diffusion run on CPU."""
 
 import argparse
 from pathlib import Path
 
-from diffusion_core import DEFAULT_SEED, DEFAULT_STEPS, capture_progression
+from diffusion_core import (
+    DEFAULT_SEED,
+    DEFAULT_STEPS,
+    PROMPT_MODE_DIRECT,
+    SUPPORTED_PROMPT_MODES,
+    capture_progression,
+    condition_prompt,
+)
 
-DEFAULT_PROMPT = "a red bicycle on a rainy street"
 OUTPUT_ROOT = Path("outputs/diffusion_progression")
 FRAMES_DIR = OUTPUT_ROOT / "frames"
 FINAL_IMAGE_PATH = OUTPUT_ROOT / "final_image.png"
@@ -25,18 +31,22 @@ def save_frames(frames) -> None:
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--prompt", default=DEFAULT_PROMPT)
+    parser.add_argument("--prompt", default="")
     parser.add_argument("--steps", type=int, default=DEFAULT_STEPS)
     parser.add_argument("--seed", type=int, default=DEFAULT_SEED)
+    parser.add_argument("--mode", choices=SUPPORTED_PROMPT_MODES, default=PROMPT_MODE_DIRECT)
     return parser.parse_args()
 
 
 def main() -> None:
     args = parse_args()
     prepare_output_dirs()
+    conditioned = condition_prompt(args.prompt, mode=args.mode)
 
-    print(f"Capturing {args.steps} denoising steps for: {args.prompt!r}")
-    frames = capture_progression(args.prompt, args.steps, args.seed)
+    print(f"Capturing {args.steps} denoising steps for: {conditioned.seed_text!r}")
+    if conditioned.mode != PROMPT_MODE_DIRECT:
+        print(f"Conditioned prompt: {conditioned.resolved_prompt}")
+    frames = capture_progression(conditioned.resolved_prompt, args.steps, args.seed)
 
     save_frames(frames)
     frames[-1].save(FINAL_IMAGE_PATH)

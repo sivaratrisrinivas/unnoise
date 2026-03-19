@@ -1,15 +1,16 @@
 :root {
-  --bg: #070707;
-  --panel: rgba(255, 255, 255, 0.04);
-  --panel-strong: rgba(255, 255, 255, 0.08);
-  --line: rgba(255, 255, 255, 0.1);
-  --line-strong: rgba(255, 255, 255, 0.18);
-  --text: #f5f0e8;
-  --muted: rgba(245, 240, 232, 0.7);
-  --faint: rgba(245, 240, 232, 0.46);
+  --bg: #06070a;
+  --panel: rgba(255, 255, 255, 0.05);
+  --panel-strong: rgba(255, 255, 255, 0.1);
+  --line: rgba(255, 255, 255, 0.11);
+  --line-strong: rgba(255, 255, 255, 0.22);
+  --text: #f6f1e9;
+  --muted: rgba(246, 241, 233, 0.76);
+  --faint: rgba(246, 241, 233, 0.52);
   --accent: #baff77;
   --accent-strong: #f7dc8c;
-  --shadow: 0 30px 80px rgba(0, 0, 0, 0.58);
+  --accent-shadow: rgba(186, 255, 119, 0.18);
+  --shadow: 0 34px 90px rgba(0, 0, 0, 0.5);
   --radius-xl: 34px;
   --radius-lg: 24px;
   --radius-md: 18px;
@@ -30,11 +31,20 @@ body {
   min-height: 100vh;
   color: var(--text);
   background:
-    radial-gradient(circle at top, rgba(186, 255, 119, 0.09), transparent 24%),
-    radial-gradient(circle at 80% 20%, rgba(247, 220, 140, 0.08), transparent 20%),
-    radial-gradient(circle at 50% 110%, rgba(255, 255, 255, 0.05), transparent 28%),
-    linear-gradient(180deg, #090909 0%, #050505 100%);
+    radial-gradient(circle at 16% 14%, rgba(186, 255, 119, 0.13), transparent 25%),
+    radial-gradient(circle at 84% 18%, rgba(247, 220, 140, 0.12), transparent 22%),
+    radial-gradient(circle at 50% 110%, rgba(255, 255, 255, 0.06), transparent 28%),
+    linear-gradient(180deg, #08090d 0%, #040508 100%);
   font-family: "IBM Plex Sans", "Avenir Next", "Segoe UI", sans-serif;
+  transition:
+    background 260ms var(--ease-out),
+    color 220ms var(--ease-out);
+}
+
+body[data-mode="prompt"] {
+  --accent: #7de9ff;
+  --accent-strong: #ffd08a;
+  --accent-shadow: rgba(125, 233, 255, 0.16);
 }
 
 button,
@@ -63,21 +73,21 @@ body::before {
   background:
     linear-gradient(90deg, rgba(255, 255, 255, 0.035) 1px, transparent 1px),
     linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px);
-  background-size: 80px 80px, 80px 80px;
-  mask-image: radial-gradient(circle at center, black 28%, transparent 100%);
-  opacity: 0.2;
+  background-size: 88px 88px, 88px 88px;
+  mask-image: radial-gradient(circle at center, black 32%, transparent 100%);
+  opacity: 0.18;
 }
 
 body::after {
   background:
-    radial-gradient(circle at 50% 45%, rgba(255, 255, 255, 0.07), transparent 45%),
-    radial-gradient(circle at 20% 20%, rgba(186, 255, 119, 0.08), transparent 16%);
+    radial-gradient(circle at 50% 42%, rgba(255, 255, 255, 0.08), transparent 45%),
+    radial-gradient(circle at 25% 18%, var(--accent-shadow), transparent 18%);
   mix-blend-mode: screen;
-  opacity: 0.42;
+  opacity: 0.45;
 }
 
 .app-shell {
-  width: min(100%, 880px);
+  width: min(100%, 960px);
   min-height: 100vh;
   margin: 0 auto;
   padding: 32px 18px 40px;
@@ -91,11 +101,11 @@ body::after {
   justify-items: center;
   gap: 20px;
   text-align: center;
-  animation: enter 500ms var(--ease-out) both;
+  animation: enter 520ms var(--ease-out) both;
 }
 
 .screen-setup {
-  max-width: 560px;
+  max-width: 620px;
   margin: 0 auto;
 }
 
@@ -105,11 +115,15 @@ body::after {
 
 .screen-reveal {
   gap: 14px;
+  max-width: 680px;
+  margin: 0 auto;
 }
 
 .brand,
+.field-label,
 .step-scale,
-.frame-meta {
+.frame-meta,
+.story-label {
   margin: 0;
   text-transform: uppercase;
   letter-spacing: 0.2em;
@@ -121,40 +135,54 @@ body::after {
 }
 
 .screen h1,
+.screen h2,
+.story-copy,
+.placeholder strong {
+  font-family: "Iowan Old Style", "Palatino Linotype", Georgia, serif;
+}
+
+.screen h1,
 .screen h2 {
   margin: 0;
-  font-family: "Iowan Old Style", "Palatino Linotype", Georgia, serif;
   font-weight: 600;
   letter-spacing: -0.06em;
 }
 
 .screen h1 {
-  font-size: clamp(3.2rem, 12vw, 6.8rem);
-  line-height: 0.88;
+  font-size: clamp(3.1rem, 11vw, 6.4rem);
+  line-height: 0.9;
 }
 
 .screen h2 {
-  font-size: clamp(1.5rem, 3vw, 2.2rem);
+  font-size: clamp(1.55rem, 3vw, 2.3rem);
   line-height: 1;
 }
 
 .lede {
-  width: min(100%, 34rem);
+  width: min(100%, 38rem);
   margin: 0;
   color: var(--muted);
-  font-size: clamp(1rem, 1.8vw, 1.12rem);
-  line-height: 1.7;
+  font-size: clamp(1rem, 1.8vw, 1.14rem);
+  line-height: 1.75;
+}
+
+.control-card,
+.story-card {
+  width: min(100%, 100%);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-xl);
+  background:
+    linear-gradient(180deg, var(--panel), rgba(255, 255, 255, 0.02)),
+    radial-gradient(circle at top, rgba(255, 255, 255, 0.03), transparent 55%);
+  box-shadow: var(--shadow);
 }
 
 .control-card {
-  width: min(100%, 460px);
+  width: min(100%, 520px);
   padding: 22px;
-  border: 1px solid var(--line);
-  border-radius: var(--radius-xl);
-  background: linear-gradient(180deg, var(--panel), rgba(255, 255, 255, 0.02));
-  box-shadow: var(--shadow);
   display: grid;
-  gap: 16px;
+  gap: 18px;
+  text-align: left;
 }
 
 .field {
@@ -162,17 +190,76 @@ body::after {
   gap: 10px;
 }
 
-.field label {
+.field label,
+.field-label {
   color: var(--muted);
-  font-size: 0.82rem;
-  letter-spacing: 0.16em;
+}
+
+.mode-grid {
+  display: grid;
+  gap: 12px;
+}
+
+.mode-option {
+  width: 100%;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--text);
+  text-align: left;
+  display: grid;
+  gap: 6px;
+  transition:
+    transform 160ms var(--ease-out),
+    border-color 180ms var(--ease-out),
+    background-color 180ms var(--ease-out),
+    box-shadow 180ms var(--ease-out);
+}
+
+.mode-option strong {
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.mode-option:hover {
+  transform: translateY(-1px);
+  border-color: rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.mode-option.is-active {
+  border-color: rgba(255, 255, 255, 0.2);
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.03)),
+    radial-gradient(circle at top left, var(--accent-shadow), transparent 55%);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.04);
+}
+
+.mode-option:focus-visible {
+  outline: 2px solid rgba(255, 255, 255, 0.86);
+  outline-offset: 4px;
+}
+
+.mode-kicker {
+  color: var(--accent);
   text-transform: uppercase;
+  letter-spacing: 0.16em;
+  font-size: 0.74rem;
+}
+
+.mode-copy,
+.input-hint {
+  color: var(--faint);
+  line-height: 1.55;
+  font-size: 0.94rem;
+  margin: 0;
 }
 
 .text-input {
   width: 100%;
-  min-height: 52px;
-  padding: 14px 16px;
+  min-height: 56px;
+  padding: 15px 16px;
   border: 1px solid var(--line);
   border-radius: 16px;
   background: rgba(255, 255, 255, 0.03);
@@ -185,13 +272,13 @@ body::after {
 }
 
 .text-input::placeholder {
-  color: rgba(245, 240, 232, 0.42);
+  color: rgba(246, 241, 233, 0.4);
 }
 
 .text-input:focus-visible {
-  outline: 2px solid rgba(186, 255, 119, 0.95);
+  outline: 2px solid rgba(255, 255, 255, 0.9);
   outline-offset: 4px;
-  border-color: rgba(186, 255, 119, 0.32);
+  border-color: rgba(255, 255, 255, 0.3);
   background: rgba(255, 255, 255, 0.05);
 }
 
@@ -226,7 +313,7 @@ body::after {
 }
 
 .step-slider:focus-visible {
-  outline: 2px solid rgba(186, 255, 119, 0.95);
+  outline: 2px solid rgba(255, 255, 255, 0.9);
   outline-offset: 6px;
   border-radius: 999px;
 }
@@ -237,7 +324,7 @@ body::after {
   border: 1px solid rgba(255, 255, 255, 0.08);
   background: linear-gradient(
     90deg,
-    rgba(186, 255, 119, 0.94) 0 var(--fill),
+    rgba(255, 255, 255, 0.88) 0 var(--fill),
     rgba(255, 255, 255, 0.08) var(--fill) 100%
   );
 }
@@ -250,9 +337,9 @@ body::after {
   margin-top: -8px;
   border-radius: 50%;
   border: 1px solid rgba(255, 255, 255, 0.16);
-  background: linear-gradient(135deg, rgba(247, 220, 140, 1), rgba(186, 255, 119, 1));
+  background: linear-gradient(135deg, var(--accent-strong), var(--accent));
   box-shadow:
-    0 0 0 6px rgba(186, 255, 119, 0.08),
+    0 0 0 6px rgba(255, 255, 255, 0.06),
     0 12px 24px rgba(0, 0, 0, 0.3);
   transition:
     transform 150ms var(--ease-out),
@@ -261,7 +348,7 @@ body::after {
 
 .step-slider:hover::-webkit-slider-thumb {
   box-shadow:
-    0 0 0 8px rgba(186, 255, 119, 0.1),
+    0 0 0 8px rgba(255, 255, 255, 0.09),
     0 12px 26px rgba(0, 0, 0, 0.32);
 }
 
@@ -279,7 +366,7 @@ body::after {
 .step-slider::-moz-range-progress {
   height: 8px;
   border-radius: 999px;
-  background: linear-gradient(90deg, rgba(186, 255, 119, 0.94), rgba(247, 220, 140, 0.94));
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.9), var(--accent));
 }
 
 .step-slider::-moz-range-thumb {
@@ -287,9 +374,9 @@ body::after {
   height: 22px;
   border-radius: 50%;
   border: 1px solid rgba(255, 255, 255, 0.16);
-  background: linear-gradient(135deg, rgba(247, 220, 140, 1), rgba(186, 255, 119, 1));
+  background: linear-gradient(135deg, var(--accent-strong), var(--accent));
   box-shadow:
-    0 0 0 6px rgba(186, 255, 119, 0.08),
+    0 0 0 6px rgba(255, 255, 255, 0.06),
     0 12px 24px rgba(0, 0, 0, 0.3);
 }
 
@@ -301,16 +388,17 @@ body::after {
 
 .generate-btn {
   width: 100%;
-  padding: 15px 18px;
+  padding: 16px 18px;
   border: 1px solid rgba(255, 255, 255, 0.16);
   border-radius: 18px;
   color: #090909;
   font-weight: 700;
-  letter-spacing: 0.03em;
-  background: linear-gradient(135deg, rgba(186, 255, 119, 1), rgba(247, 220, 140, 1));
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  background: linear-gradient(135deg, var(--accent), var(--accent-strong));
   box-shadow:
-    0 18px 40px rgba(186, 255, 119, 0.12),
-    0 14px 32px rgba(247, 220, 140, 0.12);
+    0 18px 40px var(--accent-shadow),
+    0 14px 32px rgba(247, 220, 140, 0.08);
   transition:
     transform 150ms var(--ease-out),
     box-shadow 180ms var(--ease-out),
@@ -325,8 +413,9 @@ body::after {
   transform: scale(0.97);
 }
 
-.generate-btn:focus-visible {
-  outline: 2px solid rgba(186, 255, 119, 0.95);
+.generate-btn:focus-visible,
+.home-btn:focus-visible {
+  outline: 2px solid rgba(255, 255, 255, 0.9);
   outline-offset: 4px;
 }
 
@@ -344,9 +433,10 @@ body::after {
 
 .fineprint {
   margin: 0;
-  max-width: 32rem;
+  max-width: 34rem;
   color: var(--faint);
   font-size: 0.94rem;
+  line-height: 1.7;
 }
 
 .fineprint.is-error {
@@ -359,13 +449,13 @@ body::after {
   border-radius: 50%;
   border: 2px solid rgba(255, 255, 255, 0.12);
   border-top-color: var(--accent);
-  box-shadow: 0 0 0 8px rgba(186, 255, 119, 0.05);
+  box-shadow: 0 0 0 8px rgba(255, 255, 255, 0.04);
   animation: spin 0.95s linear infinite;
 }
 
 .status {
   margin: 0;
-  color: var(--muted);
+  max-width: 34rem;
 }
 
 .frame-stage {
@@ -376,7 +466,7 @@ body::after {
   border: 1px solid var(--line);
   border-radius: var(--radius-xl);
   background:
-    radial-gradient(circle at 50% 0%, rgba(186, 255, 119, 0.09), transparent 35%),
+    radial-gradient(circle at 50% 0%, var(--accent-shadow), transparent 35%),
     linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.02));
   box-shadow: var(--shadow);
   overflow: hidden;
@@ -406,7 +496,6 @@ body::after {
 }
 
 .placeholder strong {
-  font-family: "Iowan Old Style", "Palatino Linotype", Georgia, serif;
   font-size: clamp(1.45rem, 3.4vw, 2.2rem);
   line-height: 1.1;
 }
@@ -430,8 +519,41 @@ body::after {
   white-space: nowrap;
 }
 
-.frame-counter {
+.story-card {
+  width: min(100%, 640px);
+  padding: 20px;
+  display: grid;
+  gap: 16px;
+  text-align: left;
+}
+
+.story-block {
+  display: grid;
+  gap: 6px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.story-block:last-child {
+  padding-bottom: 0;
+  border-bottom: 0;
+}
+
+.story-label {
   color: var(--accent);
+}
+
+.story-copy {
+  margin: 0;
+  font-size: clamp(1.12rem, 2vw, 1.32rem);
+  line-height: 1.45;
+  letter-spacing: -0.02em;
+}
+
+.story-copy-muted {
+  color: var(--muted);
+  font-size: 0.98rem;
+  letter-spacing: 0;
 }
 
 .home-btn {
@@ -456,11 +578,6 @@ body::after {
 
 .home-btn:active {
   transform: scale(0.97);
-}
-
-.home-btn:focus-visible {
-  outline: 2px solid rgba(186, 255, 119, 0.95);
-  outline-offset: 4px;
 }
 
 [hidden] {
@@ -504,12 +621,16 @@ body::after {
     gap: 18px;
   }
 
-  .control-card {
-    width: 100%;
+  .control-card,
+  .story-card {
     padding: 18px;
   }
 
   .frame-stage {
     width: min(100%, 100vw - 28px);
+  }
+
+  .story-copy {
+    font-size: 1.04rem;
   }
 }
