@@ -107,7 +107,7 @@ async function generate() {
   const prompt = promptInput.value.trim() || "a red bicycle on a rainy street";
 
   setBusy(true);
-  showLoading(`Running ${steps} denoising steps on CPU.`);
+  showLoading(`Running ${steps} denoising steps…`);
 
   try {
     const response = await fetch("/api/generate", {
