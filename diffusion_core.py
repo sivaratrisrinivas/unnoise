@@ -39,9 +39,15 @@ def load_pipeline() -> StableDiffusionPipeline:
                     low_cpu_mem_usage=False,
                     use_safetensors=use_safetensors,
                 )
-                pipe.scheduler = DPMSolverMultistepScheduler.from_config(pipe.scheduler.config)
+                scheduler_config = dict(pipe.scheduler.config)
+                scheduler_config.pop("predict_epsilon", None)
+                pipe.scheduler = DPMSolverMultistepScheduler.from_config(
+                    scheduler_config,
+                    timestep_spacing="trailing",
+                    steps_offset=1,
+                )
                 pipe.enable_attention_slicing()
-                pipe.enable_vae_slicing()
+                pipe.vae.enable_slicing()
                 pipe.set_progress_bar_config(disable=True)
                 return pipe.to("cpu")
             except (FileNotFoundError, OSError, ValueError) as exc:

@@ -34,7 +34,7 @@ It does that in six small steps:
 
 I changed the model because the previous one was the wrong kind of diffusion model for your goal.
 
-- `google/ddpm-cifar10-32` is unconditional
+- the previous CIFAR-10 model was unconditional
 - unconditional means it does not understand text prompts
 - `OFA-Sys/small-stable-diffusion-v0` is text-to-image
 - text-to-image means the prompt actually affects the final image
@@ -254,7 +254,7 @@ http://127.0.0.1:8000
 ## Notes
 
 - The project is designed for CPU-only machines.
-- The old Google DDPM model has been removed from the app and deleted from the local Hugging Face cache.
+- The old CIFAR-10 model has been removed from the app and deleted from the local Hugging Face cache.
 - The output is still a diffusion sample, so it will not be perfect every time.
 - More steps usually mean more waiting on CPU.
 - The same prompt should produce the same walk here because the app uses a fixed seed behind the scenes.
