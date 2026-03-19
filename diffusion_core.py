@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 from dataclasses import dataclass
 from functools import lru_cache
 import os
@@ -9,8 +10,11 @@ from pathlib import Path
 
 import torch
 from diffusers import DPMSolverMultistepScheduler, StableDiffusionPipeline
+from diffusers.utils import logging as diffusers_logging
 from diffusers.utils.torch_utils import randn_tensor
+from huggingface_hub import hf_hub_download
 from PIL import Image, ImageDraw, ImageFont
+from transformers import logging as transformers_logging
 
 MODEL_ID = "OFA-Sys/small-stable-diffusion-v0"
 DEFAULT_STEPS = 10
@@ -50,6 +54,20 @@ def _read_hf_token() -> str | None:
     return None
 
 
+def _build_scheduler(local_files_only: bool, token: str | None) -> DPMSolverMultistepScheduler:
+    scheduler_config_path = hf_hub_download(
+        MODEL_ID,
+        filename="scheduler/scheduler_config.json",
+        local_files_only=local_files_only,
+        token=token,
+    )
+    config = json.loads(Path(scheduler_config_path).read_text())
+    config.pop("predict_epsilon", None)
+    config["steps_offset"] = 1
+    config["timestep_spacing"] = "trailing"
+    return DPMSolverMultistepScheduler.from_config(config)
+
+
 @lru_cache(maxsize=1)
 def load_pipeline() -> StableDiffusionPipeline:
     """Load the CPU-only text-to-image pipeline once per process."""
@@ -59,22 +77,22 @@ def load_pipeline() -> StableDiffusionPipeline:
         os.environ.setdefault("HF_TOKEN", hf_token)
         os.environ.setdefault("HUGGINGFACE_HUB_TOKEN", hf_token)
 
+    transformers_verbosity = transformers_logging.get_verbosity()
+    diffusers_verbosity = diffusers_logging.get_verbosity()
     last_error: Exception | None = None
-    for local_files_only in (True, False):
-        for use_safetensors in (True, False):
+    transformers_logging.set_verbosity_error()
+    diffusers_logging.set_verbosity_error()
+    try:
+        for local_files_only in (True, False):
             try:
+                scheduler = _build_scheduler(local_files_only, hf_token)
                 pipe = StableDiffusionPipeline.from_pretrained(
                     MODEL_ID,
+                    scheduler=scheduler,
                     local_files_only=local_files_only,
                     low_cpu_mem_usage=False,
-                    use_safetensors=use_safetensors,
-                )
-                scheduler_config = dict(pipe.scheduler.config)
-                scheduler_config.pop("predict_epsilon", None)
-                pipe.scheduler = DPMSolverMultistepScheduler.from_config(
-                    scheduler_config,
-                    timestep_spacing="trailing",
-                    steps_offset=1,
+                    use_safetensors=False,
+                    token=hf_token,
                 )
                 pipe.enable_attention_slicing()
                 pipe.vae.enable_slicing()
@@ -83,6 +101,9 @@ def load_pipeline() -> StableDiffusionPipeline:
             except (FileNotFoundError, OSError, ValueError) as exc:
                 last_error = exc
                 continue
+    finally:
+        transformers_logging.set_verbosity(transformers_verbosity)
+        diffusers_logging.set_verbosity(diffusers_verbosity)
 
     assert last_error is not None
     raise last_error
