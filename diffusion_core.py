@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from functools import lru_cache
+import os
 from pathlib import Path
 
 import torch
@@ -17,6 +18,7 @@ MIN_STEPS = 5
 MAX_STEPS = 20
 DEFAULT_SEED = 7
 DEFAULT_GUIDANCE_SCALE = 7.5
+HF_TOKEN_FILE = Path(__file__).resolve().parent / ".env.local"
 
 
 @dataclass(frozen=True)
@@ -25,9 +27,37 @@ class SavedProgression:
     final_image_path: Path
 
 
+def _read_hf_token() -> str | None:
+    for name in ("HF_TOKEN", "HUGGINGFACE_HUB_TOKEN"):
+        token = os.environ.get(name)
+        if token:
+            return token.strip()
+
+    if not HF_TOKEN_FILE.is_file():
+        return None
+
+    for raw_line in HF_TOKEN_FILE.read_text().splitlines():
+        line = raw_line.strip()
+        if not line or line.startswith("#"):
+            continue
+
+        key, separator, value = line.partition("=")
+        if separator and key.strip() in {"HF_TOKEN", "HUGGINGFACE_HUB_TOKEN"}:
+            cleaned = value.strip().strip('"').strip("'")
+            if cleaned:
+                return cleaned
+
+    return None
+
+
 @lru_cache(maxsize=1)
 def load_pipeline() -> StableDiffusionPipeline:
     """Load the CPU-only text-to-image pipeline once per process."""
+
+    hf_token = _read_hf_token()
+    if hf_token:
+        os.environ.setdefault("HF_TOKEN", hf_token)
+        os.environ.setdefault("HUGGINGFACE_HUB_TOKEN", hf_token)
 
     last_error: Exception | None = None
     for local_files_only in (True, False):

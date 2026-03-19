@@ -258,6 +258,7 @@ http://127.0.0.1:8000
 - The output is still a diffusion sample, so it will not be perfect every time.
 - More steps usually mean more waiting on CPU.
 - The same prompt should produce the same walk here because the app uses a fixed seed behind the scenes.
+- If you want authenticated Hugging Face downloads, add `HF_TOKEN=...` to a local `.env.local` file in the repo root or export `HF_TOKEN` in your shell before starting the app.
 
 ## Sources
 
