@@ -2,14 +2,20 @@
 
 Small demo: **prompt → noise → denoise step-by-step → image**, with a minimal browser UI.
 
-**Primary way to run it:** [Google Colab](colab/unnoise.ipynb) (free GPU). One process (`app.py`) serves the UI **and** runs diffusion; you open it through Colab’s port preview — **nothing to install on your laptop.**
+**Primary way to run it:** Google Colab (free GPU). One process (`app.py`) serves the UI **and** runs diffusion; you open it through Colab’s port preview — **nothing to install on your laptop.**
+
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/sivaratrisrinivas/unnoise/blob/main/colab/unnoise.ipynb)
+
+GitHub **does not** show an “Open in Colab” control on the notebook file page — that badge above is how you get one-click open. Alternatives:
+
+- Paste this URL: `https://colab.research.google.com/github/sivaratrisrinivas/unnoise/blob/main/colab/unnoise.ipynb`
+- In Colab: **File → Open notebook →** tab **GitHub** → org/repo `sivaratrisrinivas/unnoise` → open `colab/unnoise.ipynb`
 
 ---
 
 ## Run on Google Colab (recommended)
 
-1. Open the notebook: **`colab/unnoise.ipynb`**  
-   - From GitHub: use Colab’s “Open in Colab” on that file, or upload the notebook to Colab.
+1. Open the notebook via the badge at the top of this README (or one of the alternatives above).
 2. **Runtime → Change runtime type → GPU**
 3. Run all cells in order.
 
