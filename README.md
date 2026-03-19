@@ -76,6 +76,7 @@ python scripts/visualize_denoising_progression.py
 3. Diffusion runs for N steps; intermediate latents are kept per your `UI_MAX_FRAMES` setting.
 4. Each kept step is VAE-decoded and saved under `outputs/ui_runs/<run_id>/`.
 5. JSON lists frame URLs; the UI loads them from the same host.
+6. On the **reveal** screen, autoplay advances frames every **5 seconds** so each step is easy to see. Adjust `FRAME_AUTOPLAY_MS` in [`web/app.js`](web/app.js) (milliseconds) if you want a shorter or longer hold.
 
 ---
 

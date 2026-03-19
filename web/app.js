@@ -15,6 +15,9 @@ const resetBtn = document.getElementById("resetBtn");
 
 let currentFrames = [];
 
+/** Milliseconds to show each frame during reveal autoplay (before advancing). */
+const FRAME_AUTOPLAY_MS = 5000;
+
 function syncStepDisplay() {
   const steps = Number(stepSlider.value);
   const min = Number(stepSlider.min);
@@ -66,10 +69,6 @@ function animateFrame() {
   previewImage.style.animation = "frame-pop 220ms var(--ease-out) both";
 }
 
-function frameDelay(totalFrames) {
-  return Math.max(55, Math.min(140, Math.round(9000 / totalFrames)));
-}
-
 function renderFrame(index) {
   const frame = currentFrames[index];
 
@@ -84,14 +83,12 @@ function renderFrame(index) {
 }
 
 async function playFrames() {
-  const delay = frameDelay(currentFrames.length);
-
   for (let index = 0; index < currentFrames.length; index += 1) {
     renderFrame(index);
 
     if (index < currentFrames.length - 1) {
       await new Promise((resolve) => {
-        window.setTimeout(resolve, delay);
+        window.setTimeout(resolve, FRAME_AUTOPLAY_MS);
       });
     }
   }
