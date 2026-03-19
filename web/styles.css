@@ -153,17 +153,21 @@ body::after {
   line-height: 0.9;
 }
 
+/* Single wordmark on setup (overrides serif display heading above). */
+.site-mark {
+  font-family: "IBM Plex Sans", "Avenir Next", "Segoe UI", sans-serif;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.42em;
+  font-size: clamp(2rem, 7vw, 3.25rem);
+  line-height: 1.05;
+  color: var(--text);
+  padding-inline-start: 0.42em;
+}
+
 .screen h2 {
   font-size: clamp(1.55rem, 3vw, 2.3rem);
   line-height: 1;
-}
-
-.lede {
-  width: min(100%, 38rem);
-  margin: 0;
-  color: var(--muted);
-  font-size: clamp(1rem, 1.8vw, 1.14rem);
-  line-height: 1.75;
 }
 
 .control-card,
@@ -437,6 +441,10 @@ body::after {
   color: var(--faint);
   font-size: 0.94rem;
   line-height: 1.7;
+}
+
+.fineprint:empty {
+  display: none;
 }
 
 .fineprint.is-error {

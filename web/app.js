@@ -37,7 +37,6 @@ const MODE_CONFIGS = {
     defaultValue: "a man about to fall...",
     placeholder: "Type an incomplete scene",
     hint: "We reinterpret the fragment as a plausible next moment before diffusion starts.",
-    setupMessage: "Feed it a partial thought and watch the denoising path snap into a believable continuation.",
     loadingTitle: "Completing the implied scene.",
     loadingStatus: (steps) => `Conditioning ${steps} denoising steps on the next plausible moment...`,
     buttonLabel: "Complete the Thought",
@@ -51,7 +50,6 @@ const MODE_CONFIGS = {
     defaultValue: "a red bicycle on a rainy street",
     placeholder: "Describe the image you want",
     hint: "Use a full prompt when you want classic text-to-image generation.",
-    setupMessage: "Describe the image you want and watch it emerge from noise.",
     loadingTitle: "Walking from words to image.",
     loadingStatus: (steps) => `Running ${steps} denoising steps...`,
     buttonLabel: "Generate Image",
@@ -99,7 +97,7 @@ function renderDefaultStoryCopy() {
   resultPrompt.textContent = config.defaultResolvedPrompt;
 }
 
-function resetToSetup(message = getModeConfig().setupMessage, isError = false) {
+function resetToSetup(message = "", isError = false) {
   playbackToken += 1;
   currentFrames = [];
   previewImage.hidden = true;
@@ -209,7 +207,7 @@ function applyMode(mode, { preserveCustomValue = true } = {}) {
   }
 
   if (document.body.dataset.view === "setup") {
-    setupMessage.textContent = nextConfig.setupMessage;
+    setupMessage.textContent = "";
     setupMessage.classList.remove("is-error");
   }
 
