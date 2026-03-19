@@ -19,7 +19,7 @@ GitHub **does not** show an “Open in Colab” control on the notebook file pag
 2. **Runtime → Change runtime type → GPU**
 3. Run all cells in order.
 
-Last cell starts `app.py`, **waits until port 8000 accepts connections**, then calls `output.serve_kernel_port_as_iframe(8000, …)`. If the server never binds, it prints the tail of `/tmp/unnoise_app.log`.
+Last cell starts `app.py`, **waits until port 8000 accepts connections**, then calls `output.serve_kernel_port_as_window(8000, …)` so the UI opens in a **new browser tab** (not only inside the notebook). If popups are blocked, allow them for Colab or switch to `serve_kernel_port_as_iframe` in the notebook. If the server never binds, it prints the tail of `/tmp/unnoise_app.log`.
 
 **Why you might have seen a blank iframe:** `WARMUP_MODEL=1` runs a full model download/load **before** `app.py` binds to port 8000; a short `sleep(10)` then embeds an empty port. The bundled notebook sets `WARMUP_MODEL=0` so the server starts immediately; the **first Generate** pays the Hugging Face download.
 
