@@ -370,7 +370,7 @@ body::after {
 
 .frame-stage {
   position: relative;
-  width: min(100%, 384px);
+  width: min(100%, 512px);
   aspect-ratio: 1;
   padding: 0;
   border: 1px solid var(--line);
@@ -383,20 +383,6 @@ body::after {
   display: grid;
   place-items: center;
   transition: border-color 180ms var(--ease-out);
-}
-
-.frame-sheen {
-  position: absolute;
-  inset: 0;
-  background:
-    linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.05), transparent);
-  transform: translateX(-120%);
-  opacity: 0.3;
-  pointer-events: none;
-}
-
-body[data-view="reveal"] .frame-sheen {
-  animation: sweep 3.2s var(--ease-in-out) infinite;
 }
 
 .placeholder {
@@ -506,18 +492,6 @@ body[data-view="reveal"] .frame-sheen {
 @keyframes spin {
   to {
     transform: rotate(360deg);
-  }
-}
-
-@keyframes sweep {
-  0% {
-    transform: translateX(-120%);
-  }
-  55% {
-    transform: translateX(120%);
-  }
-  100% {
-    transform: translateX(120%);
   }
 }
 

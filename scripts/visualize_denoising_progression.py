@@ -1,9 +1,11 @@
-"""Build a contact sheet from saved DDPM denoising frames."""
+"""Build a contact sheet from saved diffusion progression frames."""
 
 from math import ceil
 from pathlib import Path
 
 from PIL import Image, ImageDraw, ImageFont
+
+from diffusion_core import frame_label
 
 FRAMES_DIR = Path("outputs/diffusion_progression/frames")
 CONTACT_SHEET_PATH = Path("outputs/diffusion_progression/contact_sheet.png")
@@ -39,8 +41,7 @@ def build_contact_sheet(frames: list[Image.Image]) -> Image.Image:
         y = row * cell_height + PADDING
         thumb = frame.resize((THUMB_SIZE, THUMB_SIZE), Image.Resampling.NEAREST)
         canvas.paste(thumb, (x, y))
-        caption = "noise" if index == 0 else f"step {index}"
-        draw.text((x, y + THUMB_SIZE + 2), caption, fill="black", font=font)
+        draw.text((x, y + THUMB_SIZE + 2), frame_label(index), fill="black", font=font)
 
     return canvas
 

@@ -1,169 +1,155 @@
 # unnoise
 
-`unnoise` is a small CPU-only diffusion project that shows how random noise slowly turns into a real image.
+`unnoise` is a CPU-only text-to-image demo that shows how a prompt becomes an image one denoising step at a time.
 
-The whole point of the project is to make diffusion feel understandable instead of magical:
+The goal is simple:
 
-- start with pure noise
-- watch the model remove noise step by step
-- save every intermediate frame
-- compare the early chaos with the final image
-- control the number of denoising steps from the browser
+- type a prompt
+- start from pure noise
+- watch the image sharpen step by step
+- keep the interface small enough to stay focused on the reveal
 
-This project is intentionally lightweight:
+This version is built for a machine with:
 
-- it uses `google/ddpm-cifar10-32`
-- it runs on CPU
-- it avoids heavy image generation models
-- it keeps the code simple enough to learn from
+- CPU only
+- 8 GB RAM
+- no GPU tricks
 
-## What You Build
+It uses `OFA-Sys/small-stable-diffusion-v0`, which is a real text-to-image model. That means the words you type are actually fed into the model. The old CIFAR-10 model was unconditional, so it could only generate random images from noise. This new model can follow prompts, which is what you wanted.
 
-You end up with three things:
+## What This Project Does
 
-1. A tiny Python script that generates one image from noise.
-2. A second script that saves every denoising step.
-3. A custom HTML/CSS/JavaScript UI that keeps the screen focused on one thing at a time.
+The app has one main idea: show the walk from noise to image instead of hiding it.
 
-## Why This Project Exists
+It does that in six small steps:
 
-Diffusion models are easier to understand when you do not jump straight to the final picture.
+1. Set up a tiny CPU-only Python environment.
+2. Generate one image from a text prompt.
+3. Save every denoising step.
+4. Turn the saved frames into a visual summary.
+5. Open a minimal browser UI.
+6. Let the user change how many denoising steps to run.
 
-If you only see the output image, it looks like the model is doing something mysterious.
-If you see the intermediate frames, the process becomes much clearer:
+## Why This Model
 
-- the first frame is just noise
-- the middle frames start to form shapes
-- the final frame becomes a recognizable image
+I changed the model because the previous one was the wrong kind of diffusion model for your goal.
 
-That is the main teaching goal of this project.
+- `google/ddpm-cifar10-32` is unconditional
+- unconditional means it does not understand text prompts
+- `OFA-Sys/small-stable-diffusion-v0` is text-to-image
+- text-to-image means the prompt actually affects the final image
 
-## How The Project Works
+This model is also a better fit for your hardware than a full heavy model stack.
 
-The project is split into small steps on purpose.
+- it is smaller than standard Stable Diffusion v1.5
+- it is documented as being nearly half the size of the baseline model
+- the model card says it can run on CPU with OpenVINO in about 5 seconds at 10 steps on a Xeon-class CPU
+- your machine will still be slower than that, but it is a realistic local target
 
-Each step teaches one idea and proves one piece of the pipeline before the next step is added.
+## Step 1: Set Up The Environment
 
-### Step 1: Set Up The Environment
-
-What this step does:
-
-- creates an isolated Python environment
-- installs only the packages needed for the tutorial
-- keeps everything CPU-only
-
-Why this step matters:
-
-- it prevents package conflicts
-- it keeps the project lightweight for an 8 GB RAM machine
-- it makes the rest of the steps easier to reproduce
-
-How to do it:
+This stays intentionally small.
 
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
 python -m pip install --upgrade pip
 pip install --index-url https://download.pytorch.org/whl/cpu torch
-pip install diffusers transformers
+pip install diffusers transformers safetensors
 ```
 
-### Step 2: Generate One Image From Noise
+What each line does:
 
-What this step does:
+- the virtual environment keeps the project isolated
+- the PyTorch CPU wheel keeps everything CPU-only
+- `diffusers` provides the diffusion pipelines
+- `transformers` gives the text encoder pieces the model needs
+- `safetensors` helps load the model weights cleanly
 
-- loads `google/ddpm-cifar10-32`
-- starts from random noise
-- runs the diffusion model for a fixed number of denoising steps
-- saves one final image
+## Step 2: Generate One Image From A Prompt
 
-Why this step matters:
+This is the first real check that the model works.
 
-- it proves the model works on your machine
-- it gives you the simplest possible working output
-- it keeps the first success easy to understand
-
-How to run it:
+Run:
 
 ```bash
-.venv/bin/python scripts/generate_single_image.py
+.venv/bin/python scripts/generate_single_image.py --prompt "a red bicycle on a rainy street"
 ```
 
-What to expect:
+What happens:
 
-- the image will be small because the model is trained for `32 x 32` images
-- the result will usually look blurry or noisy at first glance
-- that is fine, because the goal here is to prove the pipeline works
+- the script loads the prompt-based pipeline on CPU
+- it starts from random noise
+- it denoises for a fixed number of steps
+- it saves one final image
 
-### Step 3: Capture Every Denoising Frame
+Why this matters:
 
-What this step does:
+- it proves the model can follow text
+- it proves the pipeline runs on your machine
+- it gives you the simplest possible output before we add UI
 
-- runs the same diffusion model again
-- saves the initial pure noise image
-- saves one image after every denoising step
-- writes the final image to disk too
+You can change the prompt with `--prompt`.
+You can change the number of steps with `--steps`.
 
-Why this step matters:
+## Step 3: Capture Every Denoising Frame
 
-- this is where the tutorial becomes educational
-- you can now see the model’s work, not just the result
-- each saved frame shows one small move from chaos toward structure
+This step makes the process visible.
 
-How to run it:
+Run:
 
 ```bash
-.venv/bin/python scripts/generate_denoising_progression.py
+.venv/bin/python scripts/generate_denoising_progression.py --prompt "a red bicycle on a rainy street"
 ```
 
-What gets saved:
+What happens:
 
-- `outputs/diffusion_progression/frames/frame_000.png`
-- `outputs/diffusion_progression/frames/frame_001.png`
-- ...
+- the script saves the starting noise frame
+- it saves one frame after every denoising step
+- it saves the final image at the end
+
+Why this matters:
+
+- you can see the model working instead of only seeing the result
+- the middle frames show structure slowly appearing
+- this is the core teaching moment of the project
+
+The frames are saved under:
+
+- `outputs/diffusion_progression/frames/`
 - `outputs/diffusion_progression/final_image.png`
 
-### Step 4: Turn The Frames Into A Visual Summary
+## Step 4: Build A Visual Summary
 
-What this step does:
+This turns the saved frames into one contact sheet.
 
-- reads the saved progression frames
-- arranges them into a contact sheet
-- puts the whole walk in one image
-
-Why this step matters:
-
-- it is easier to compare steps when they are visible at once
-- the contact sheet makes the “noise to meaning” jump obvious
-- it helps with teaching and debugging
-
-How to run it:
+Run:
 
 ```bash
 .venv/bin/python scripts/visualize_denoising_progression.py
 ```
 
-What gets saved:
+What happens:
+
+- the script reads the saved frames from Step 3
+- it lays them out in a grid
+- it saves one summary image
+
+Why this matters:
+
+- a contact sheet makes the progression easy to scan
+- it shows the noise-to-image walk at a glance
+- it is useful for debugging and for teaching
+
+The summary is saved at:
 
 - `outputs/diffusion_progression/contact_sheet.png`
 
-### Step 5: Open The Custom Web UI
+## Step 5: Open The Browser UI
 
-What this step does:
+This is the small HTML/CSS/JavaScript front end.
 
-- starts a small Python HTTP server
-- serves the custom HTML page
-- runs the model when you press the button
-- shows one screen for setup and one autoplay reveal
-- keeps the browser focused on one thing at a time
-
-Why this step matters:
-
-- it makes the project feel interactive
-- it reduces the number of things on screen at once
-- it keeps the browser simple and lets Python handle the model work
-
-How to run it:
+Run:
 
 ```bash
 .venv/bin/python app.py
@@ -171,69 +157,87 @@ How to run it:
 
 Then open:
 
-- `http://127.0.0.1:8000`
+```text
+http://127.0.0.1:8000
+```
 
-What the page shows:
+What the browser shows:
 
-- a setup screen with a seed phrase field, a step slider, and one button
-- a reveal screen that plays the frames automatically
-- a short loading line while the model is running
+- a setup screen with a prompt field and a step slider
+- a loading screen while Python runs the model
+- a reveal screen that auto-plays the denoising frames
 
-### Step 6: Change The Number Of Denoising Steps
+Why this matters:
 
-What this step does:
+- the page stays focused on one action at a time
+- the prompt is simple to change
+- the reveal is the whole point, so the UI stays quiet
 
-- adds a slider in the UI
-- lets you choose between `10` and `100` denoising steps
-- sends that value to Python when you click generate
-- lets you type any phrase, then uses that phrase as the seed for the random noise
+## Step 6: Change The Number Of Steps
 
-Why this step matters:
+The slider is now tuned for CPU prompt generation.
 
-- fewer steps are faster but rougher
-- more steps are slower but usually cleaner and more structured
-- this makes the tradeoff visible instead of theoretical
-- the phrase is still just a seed because `google/ddpm-cifar10-32` is an unconditional model
-- that keeps us inside the lightweight CPU-only constraint
+- minimum: `5`
+- maximum: `20`
+- default: `10`
 
-How to use it:
+What the slider changes:
 
-- type any phrase you want
-- move the slider before you click generate
-- try a smaller value like `10`
-- then try a larger value like `100`
-- compare how long each run takes and how the frames evolve
+- fewer steps are faster
+- more steps are usually cleaner
+- too many steps on CPU just makes the app slow without adding much value
 
-What to look for:
+What to expect:
 
-- a low step count tends to keep the image rough and unfinished
-- a high step count gives the model more chances to clean up the image
-- the difference is easiest to notice in the middle frames
-- the browser shows one starting noise frame plus one frame for each denoising step
-- that means `10` steps gives you `11` frames, and `100` steps gives you `101` frames
-- the browser auto-plays the frames, so you can just watch the reveal happen
+- `5` steps gives you a rough, fast walk
+- `10` steps is the default balance
+- `20` steps is the cleanest option in this app
 
-## Project Files
+## What The Prompt Does
 
-- `scripts/generate_single_image.py` generates one final image from noise
-- `scripts/generate_denoising_progression.py` saves every step in the diffusion walk
-- `scripts/visualize_denoising_progression.py` builds the contact sheet
-- `app.py` serves the browser UI and runs the generation API
-- `diffusion_core.py` holds the shared diffusion logic
-- `web/index.html` contains the page structure
-- `web/styles.css` contains the visual design
-- `web/app.js` connects the UI to Python
+This is the important part.
+
+The prompt is no longer just a seed.
+It is passed into the model as text.
+
+That means:
+
+- different prompts produce different images
+- the same prompt is reproducible here because the app keeps the random seed fixed
+- the model still has limits, so it will not perfectly match every request
+
+The model card for Stable Diffusion v1.5-style models also warns that:
+
+- the model does not achieve perfect photorealism
+- the model cannot render legible text well
+- harder composition requests are still difficult
+
+So the honest expectation is:
+
+- prompt matters now
+- exact prompt perfection still does not happen
 
 ## What Happens When You Click Generate
 
-1. The browser reads the step value from the slider.
-2. The browser sends the step count and seed phrase to Python.
-3. Python loads the cached DDPM pipeline.
-4. Python starts from pure noise.
-5. Python runs the denoising loop one step at a time.
-6. Python saves every frame and the final image.
-7. Python sends the list of frame URLs back to the browser.
-8. The browser auto-plays the frames from noise to the final image.
+1. The browser reads the prompt and step count.
+2. The browser sends both values to Python.
+3. Python loads the cached pipeline, or downloads it if needed.
+4. Python starts from random noise.
+5. Python denoises step by step while storing the intermediate latents.
+6. Python decodes each stored step into an image.
+7. Python saves the frames and the final image.
+8. The browser auto-plays the reveal.
+
+## Project Files
+
+- `scripts/generate_single_image.py` generates one final image from a prompt
+- `scripts/generate_denoising_progression.py` saves every step in the diffusion walk
+- `scripts/visualize_denoising_progression.py` builds the contact sheet
+- `app.py` serves the browser UI and exposes the generation API
+- `diffusion_core.py` holds the shared prompt-driven diffusion logic
+- `web/index.html` contains the page structure
+- `web/styles.css` contains the visual design
+- `web/app.js` connects the UI to Python
 
 ## Run It Locally
 
@@ -250,7 +254,13 @@ http://127.0.0.1:8000
 ## Notes
 
 - The project is designed for CPU-only machines.
-- The model is small on purpose.
-- The images are tiny because `google/ddpm-cifar10-32` is trained for `32 x 32` outputs.
-- More denoising steps usually mean more time on CPU.
-- You may see a warning about `accelerate` the first time the model loads; the tutorial still works without it.
+- The old Google DDPM model has been removed from the app and deleted from the local Hugging Face cache.
+- The output is still a diffusion sample, so it will not be perfect every time.
+- More steps usually mean more waiting on CPU.
+- The same prompt should produce the same walk here because the app uses a fixed seed behind the scenes.
+
+## Sources
+
+- [OFA-Sys/small-stable-diffusion-v0](https://huggingface.co/OFA-Sys/small-stable-diffusion-v0)
+- [Stable Diffusion v1.5 model card](https://huggingface.co/stable-diffusion-v1-5/stable-diffusion-v1-5)
+- [Diffusers pipeline callbacks](https://huggingface.co/docs/diffusers/main/using-diffusers/callback)

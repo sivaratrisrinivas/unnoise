@@ -1,4 +1,4 @@
-"""Shared diffusion utilities for the tutorial app and scripts."""
+"""Shared text-to-image diffusion utilities for the tutorial app and scripts."""
 
 from __future__ import annotations
 
@@ -7,11 +7,16 @@ from functools import lru_cache
 from pathlib import Path
 
 import torch
-from diffusers import DDPMPipeline
+from diffusers import DPMSolverMultistepScheduler, StableDiffusionPipeline
 from diffusers.utils.torch_utils import randn_tensor
 from PIL import Image, ImageDraw, ImageFont
 
-MODEL_ID = "google/ddpm-cifar10-32"
+MODEL_ID = "OFA-Sys/small-stable-diffusion-v0"
+DEFAULT_STEPS = 10
+MIN_STEPS = 5
+MAX_STEPS = 20
+DEFAULT_SEED = 7
+DEFAULT_GUIDANCE_SCALE = 7.5
 
 
 @dataclass(frozen=True)
@@ -21,30 +26,33 @@ class SavedProgression:
 
 
 @lru_cache(maxsize=1)
-def load_pipeline() -> DDPMPipeline:
-    """Load the CPU-only DDPM pipeline once per process."""
-    loader_kwargs = {
-        "low_cpu_mem_usage": False,
-        "use_safetensors": False,
-    }
+def load_pipeline() -> StableDiffusionPipeline:
+    """Load the CPU-only text-to-image pipeline once per process."""
 
-    try:
-        pipe = DDPMPipeline.from_pretrained(
-            MODEL_ID,
-            local_files_only=True,
-            **loader_kwargs,
-        )
-    except (FileNotFoundError, OSError):
-        pipe = DDPMPipeline.from_pretrained(
-            MODEL_ID,
-            **loader_kwargs,
-        )
-    pipe = pipe.to("cpu")
-    pipe.set_progress_bar_config(disable=True)
-    return pipe
+    last_error: Exception | None = None
+    for local_files_only in (True, False):
+        for use_safetensors in (True, False):
+            try:
+                pipe = StableDiffusionPipeline.from_pretrained(
+                    MODEL_ID,
+                    local_files_only=local_files_only,
+                    low_cpu_mem_usage=False,
+                    use_safetensors=use_safetensors,
+                )
+                pipe.scheduler = DPMSolverMultistepScheduler.from_config(pipe.scheduler.config)
+                pipe.enable_attention_slicing()
+                pipe.enable_vae_slicing()
+                pipe.set_progress_bar_config(disable=True)
+                return pipe.to("cpu")
+            except (FileNotFoundError, OSError, ValueError) as exc:
+                last_error = exc
+                continue
+
+    assert last_error is not None
+    raise last_error
 
 
-def _image_shape(pipe: DDPMPipeline, batch_size: int = 1) -> tuple[int, ...]:
+def _latent_shape(pipe: StableDiffusionPipeline, batch_size: int = 1) -> tuple[int, ...]:
     if isinstance(pipe.unet.config.sample_size, int):
         return (
             batch_size,
@@ -56,10 +64,11 @@ def _image_shape(pipe: DDPMPipeline, batch_size: int = 1) -> tuple[int, ...]:
     return (batch_size, pipe.unet.config.in_channels, *pipe.unet.config.sample_size)
 
 
-def tensor_to_pil(pipe: DDPMPipeline, image: torch.Tensor) -> Image.Image:
-    image = (image / 2 + 0.5).clamp(0, 1)
-    image = image.cpu().permute(0, 2, 3, 1).numpy()
-    return pipe.numpy_to_pil(image)[0]
+def tensor_to_pil(pipe: StableDiffusionPipeline, latents: torch.Tensor) -> Image.Image:
+    latents = latents.to(pipe.vae.dtype) / pipe.vae.config.scaling_factor
+    with torch.inference_mode():
+        image = pipe.vae.decode(latents, return_dict=False)[0]
+    return pipe.image_processor.postprocess(image, output_type="pil")[0]
 
 
 def frame_label(index: int) -> str:
@@ -67,43 +76,50 @@ def frame_label(index: int) -> str:
 
 
 def capture_progression(
-    num_inference_steps: int = 50,
-    seed: int = 7,
-    *,
-    show_progress_bar: bool = False,
+    prompt: str,
+    num_inference_steps: int = DEFAULT_STEPS,
+    seed: int = DEFAULT_SEED,
 ) -> list[Image.Image]:
-    """Run the DDPM loop and keep the initial noise plus each intermediate frame."""
+    """Run the text-to-image diffusion loop and keep the initial noise plus each frame."""
     pipe = load_pipeline()
     generator = torch.Generator(device="cpu").manual_seed(seed)
 
-    if pipe.device.type == "mps":
-        image = randn_tensor(_image_shape(pipe), generator=generator, dtype=pipe.unet.dtype)
-        image = image.to(pipe.device)
-    else:
-        image = randn_tensor(
-            _image_shape(pipe),
-            generator=generator,
-            device=pipe.device,
-            dtype=pipe.unet.dtype,
-        )
+    latents = randn_tensor(
+        _latent_shape(pipe),
+        generator=generator,
+        device=pipe.device,
+        dtype=pipe.unet.dtype,
+    )
 
-    frames = [tensor_to_pil(pipe, image)]
-    pipe.scheduler.set_timesteps(num_inference_steps)
-    timesteps = pipe.scheduler.timesteps
-    iterator = pipe.progress_bar(timesteps) if show_progress_bar else timesteps
+    latent_history = [latents.detach().cpu().clone()]
+
+    def capture_callback(_pipe, _step_index, _timestep, callback_kwargs):
+        latent_history.append(callback_kwargs["latents"].detach().cpu().clone())
+        return callback_kwargs
 
     with torch.inference_mode():
-        for timestep in iterator:
-            model_output = pipe.unet(image, timestep).sample
-            image = pipe.scheduler.step(
-                model_output,
-                timestep,
-                image,
-                generator=generator,
-            ).prev_sample
-            frames.append(tensor_to_pil(pipe, image))
+        pipe(
+            prompt=prompt,
+            num_inference_steps=num_inference_steps,
+            guidance_scale=DEFAULT_GUIDANCE_SCALE,
+            generator=generator,
+            latents=latents,
+            callback_on_step_end=capture_callback,
+            callback_on_step_end_tensor_inputs=["latents"],
+        )
+
+    frames = [tensor_to_pil(pipe, latents) for latents in latent_history]
 
     return frames
+
+
+def generate_final_image(
+    prompt: str,
+    num_inference_steps: int = DEFAULT_STEPS,
+    seed: int = DEFAULT_SEED,
+) -> Image.Image:
+    """Generate just the final image for a single prompt."""
+    return capture_progression(prompt, num_inference_steps, seed)[-1]
 
 
 def build_contact_sheet(
@@ -128,7 +144,7 @@ def build_contact_sheet(
         row, column = divmod(index, columns)
         x = column * cell_width + padding
         y = row * cell_height + padding
-        thumb = frame.resize((thumb_size, thumb_size), Image.Resampling.NEAREST)
+        thumb = frame.resize((thumb_size, thumb_size), Image.Resampling.LANCZOS)
         canvas.paste(thumb, (x, y))
         draw.text((x, y + thumb_size + 2), frame_label(index), fill="black", font=font)
 

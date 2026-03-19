@@ -11,17 +11,18 @@
     <main class="app-shell">
       <section id="setupScreen" class="screen screen-setup" aria-labelledby="heroTitle">
         <p class="brand">unnoise</p>
-        <h1 id="heroTitle">Noise becomes structure.</h1>
-        <p class="lede">A tiny CPU diffusion ritual that turns one seed into a visible walk.</p>
+        <h1 id="heroTitle">Prompt becomes image.</h1>
+        <p class="lede">A tiny CPU text-to-image walk from words to a picture.</p>
 
         <div class="control-card">
           <div class="field">
-            <label for="seedInput">Seed phrase</label>
+            <label for="promptInput">Prompt</label>
             <input
-              id="seedInput"
+              id="promptInput"
               class="text-input"
               type="text"
-              placeholder='Try something like "storm over a city"'
+              value="a red bicycle on a rainy street"
+              placeholder="Describe the image you want"
               autocomplete="off"
               spellcheck="false"
             />
@@ -30,22 +31,22 @@
           <div class="field">
             <div class="slider-head">
               <label for="stepSlider">Denoising steps</label>
-              <output id="stepValue" class="step-value" for="stepSlider">100</output>
+              <output id="stepValue" class="step-value" for="stepSlider">10</output>
             </div>
 
             <input
               id="stepSlider"
               class="step-slider"
               type="range"
-              min="10"
-              max="100"
-              step="10"
-              value="100"
+              min="5"
+              max="20"
+              step="5"
+              value="10"
             />
 
             <div class="step-scale" aria-hidden="true">
-              <span>10 faster</span>
-              <span>100 cleaner</span>
+              <span>5 faster</span>
+              <span>20 cleaner</span>
             </div>
           </div>
 
@@ -54,13 +55,13 @@
           </button>
         </div>
 
-        <p id="setupMessage" class="fineprint">Any text works. It becomes the seed for the noise.</p>
+        <p id="setupMessage" class="fineprint">Describe the image you want.</p>
       </section>
 
       <section id="loadingScreen" class="screen screen-loading" hidden aria-live="polite">
         <div class="loader" aria-hidden="true"></div>
         <p class="brand">unnoise</p>
-        <h2>Walking from noise to meaning.</h2>
+        <h2>Walking from words to image.</h2>
         <p id="statusText" class="status">Loading the model.</p>
       </section>
 

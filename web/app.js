@@ -2,7 +2,7 @@ const setupScreen = document.getElementById("setupScreen");
 const loadingScreen = document.getElementById("loadingScreen");
 const revealScreen = document.getElementById("revealScreen");
 const generateBtn = document.getElementById("generateBtn");
-const seedInput = document.getElementById("seedInput");
+const promptInput = document.getElementById("promptInput");
 const stepSlider = document.getElementById("stepSlider");
 const stepValue = document.getElementById("stepValue");
 const setupMessage = document.getElementById("setupMessage");
@@ -27,7 +27,7 @@ function syncStepDisplay() {
 
 function setBusy(isBusy) {
   generateBtn.disabled = isBusy;
-  seedInput.disabled = isBusy;
+  promptInput.disabled = isBusy;
   stepSlider.disabled = isBusy;
   resetBtn.disabled = isBusy;
 }
@@ -39,7 +39,7 @@ function showScreen(screen) {
   document.body.dataset.view = screen;
 }
 
-function resetToSetup(message = "Any text works. It becomes the seed for the noise.", isError = false) {
+function resetToSetup(message = "Describe the image you want.", isError = false) {
   currentFrames = [];
   previewImage.hidden = true;
   previewImage.removeAttribute("src");
@@ -51,6 +51,7 @@ function resetToSetup(message = "Any text works. It becomes the seed for the noi
   setupMessage.classList.toggle("is-error", isError);
   setBusy(false);
   showScreen("setup");
+  promptInput.focus({ preventScroll: true });
 }
 
 function showLoading(message) {
@@ -103,8 +104,7 @@ function showResetAction() {
 
 async function generate() {
   const steps = Number(stepSlider.value);
-  const seedText = seedInput.value.trim();
-  const phrase = seedText || "unnoise";
+  const prompt = promptInput.value.trim() || "a red bicycle on a rainy street";
 
   setBusy(true);
   showLoading(`Running ${steps} denoising steps on CPU.`);
@@ -117,7 +117,7 @@ async function generate() {
       },
       body: JSON.stringify({
         steps,
-        seed_text: phrase,
+        prompt,
       }),
     });
 

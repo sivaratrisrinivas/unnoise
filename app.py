@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import json
-import hashlib
 import mimetypes
 import os
 import threading
@@ -16,7 +15,15 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import unquote, urlparse
 
-from diffusion_core import capture_progression, frame_label, save_progression_frames
+from diffusion_core import (
+    DEFAULT_SEED,
+    DEFAULT_STEPS,
+    MAX_STEPS,
+    MIN_STEPS,
+    capture_progression,
+    frame_label,
+    save_progression_frames,
+)
 
 ROOT = Path(__file__).resolve().parent
 WEB_DIR = ROOT / "web"
@@ -24,10 +31,7 @@ OUTPUTS_DIR = ROOT / "outputs"
 RUNS_DIR = OUTPUTS_DIR / "ui_runs"
 HOST = os.environ.get("HOST", "0.0.0.0")
 PORT = int(os.environ.get("PORT", "8000"))
-DEFAULT_STEPS = 50
-MIN_STEPS = 10
-MAX_STEPS = 100
-DEFAULT_SEED = 7
+DEFAULT_PROMPT = "a red bicycle on a rainy street"
 generation_lock = threading.Lock()
 
 
@@ -71,25 +75,17 @@ def serve_file(handler: BaseHTTPRequestHandler, path: Path) -> None:
     write_response(handler, HTTPStatus.OK, content, content_type or "application/octet-stream")
 
 
-def derive_seed(seed_text: str | None, fallback: int) -> int:
-    cleaned = (seed_text or "").strip()
-    if not cleaned:
-        return fallback
-
-    digest = hashlib.sha256(cleaned.encode("utf-8")).digest()
-    return int.from_bytes(digest[:8], "big") & 0x7FFFFFFFFFFFFFFF
-
-
-def run_generation(steps: int, seed: int) -> dict:
+def run_generation(prompt: str, steps: int) -> dict:
     if not MIN_STEPS <= steps <= MAX_STEPS:
         raise ValueError(f"steps must be between {MIN_STEPS} and {MAX_STEPS}")
 
+    cleaned_prompt = prompt.strip() or DEFAULT_PROMPT
     run_id = datetime.now(timezone.utc).strftime("%Y%m%d-%H%M%S") + "-" + uuid.uuid4().hex[:6]
     run_dir = RUNS_DIR / run_id
     run_dir.mkdir(parents=True, exist_ok=True)
 
     start = time.perf_counter()
-    frames = capture_progression(steps, seed, show_progress_bar=False)
+    frames = capture_progression(cleaned_prompt, steps, DEFAULT_SEED)
     assets = save_progression_frames(frames, run_dir)
     elapsed_seconds = round(time.perf_counter() - start, 2)
 
@@ -98,8 +94,9 @@ def run_generation(steps: int, seed: int) -> dict:
 
     return {
         "run_id": run_id,
+        "prompt": cleaned_prompt,
         "steps": steps,
-        "seed": seed,
+        "seed": DEFAULT_SEED,
         "elapsed_seconds": elapsed_seconds,
         "frame_count": len(frame_urls),
         "frames": [
@@ -146,14 +143,14 @@ class NoiseMeaningHandler(BaseHTTPRequestHandler):
         content_length = int(self.headers.get("Content-Length", "0"))
         payload = json.loads(self.rfile.read(content_length) or b"{}")
         steps = int(payload.get("steps", DEFAULT_STEPS))
-        seed = derive_seed(payload.get("seed_text"), int(payload.get("seed", DEFAULT_SEED)))
+        prompt = str(payload.get("prompt") or payload.get("seed_text") or DEFAULT_PROMPT)
 
         if not generation_lock.acquire(blocking=False):
             write_json(self, HTTPStatus.CONFLICT, {"error": "Generation already in progress"})
             return
 
         try:
-            result = run_generation(steps, seed)
+            result = run_generation(prompt, steps)
             write_json(self, HTTPStatus.OK, result)
         except ValueError as exc:
             write_json(self, HTTPStatus.BAD_REQUEST, {"error": str(exc)})

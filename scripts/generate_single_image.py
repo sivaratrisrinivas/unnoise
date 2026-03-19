@@ -1,32 +1,29 @@
-"""Generate one image from pure noise with a CPU-only DDPM pipeline."""
+"""Generate one image from a prompt with a CPU-only text-to-image pipeline."""
 
+import argparse
 from pathlib import Path
 
-import torch
-from diffusers import DDPMPipeline
+from diffusion_core import DEFAULT_SEED, DEFAULT_STEPS, generate_final_image
 
-MODEL_ID = "google/ddpm-cifar10-32"
+DEFAULT_PROMPT = "a red bicycle on a rainy street"
 OUTPUT_DIR = Path("outputs")
 OUTPUT_PATH = OUTPUT_DIR / "generate_single_image.png"
-NUM_INFERENCE_STEPS = 50
-SEED = 7
+
+
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--prompt", default=DEFAULT_PROMPT)
+    parser.add_argument("--steps", type=int, default=DEFAULT_STEPS)
+    parser.add_argument("--seed", type=int, default=DEFAULT_SEED)
+    return parser.parse_args()
 
 
 def main() -> None:
+    args = parse_args()
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
-    print(f"Loading {MODEL_ID} on CPU...")
-    pipe = DDPMPipeline.from_pretrained(MODEL_ID)
-    pipe = pipe.to("cpu")
-
-    print(
-        f"Generating one image from pure noise with {NUM_INFERENCE_STEPS} denoising steps..."
-    )
-    generator = torch.Generator(device="cpu").manual_seed(SEED)
-    image = pipe(
-        generator=generator,
-        num_inference_steps=NUM_INFERENCE_STEPS,
-    ).images[0]
+    print(f"Generating a prompt-driven image for: {args.prompt!r}")
+    image = generate_final_image(args.prompt, args.steps, args.seed)
 
     image.save(OUTPUT_PATH)
     print(f"Saved image to {OUTPUT_PATH.resolve()}")
