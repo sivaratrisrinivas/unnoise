@@ -3,10 +3,12 @@
 from __future__ import annotations
 
 import json
+import math
 from dataclasses import dataclass
 from functools import lru_cache
 import os
 from pathlib import Path
+from typing import Literal
 
 import torch
 from diffusers import DPMSolverMultistepScheduler, StableDiffusionPipeline
@@ -68,9 +70,16 @@ def _build_scheduler(local_files_only: bool, token: str | None) -> DPMSolverMult
     return DPMSolverMultistepScheduler.from_config(config)
 
 
-@lru_cache(maxsize=1)
-def load_pipeline() -> StableDiffusionPipeline:
-    """Load the CPU-only text-to-image pipeline once per process."""
+@lru_cache(maxsize=4)
+def load_pipeline(device: Literal["cpu"] | str = "cpu") -> StableDiffusionPipeline:
+    """Load the text-to-image pipeline once per process/device.
+
+    Your UI is CPU-only today (it forces `.to("cpu")`), which prevents Colab GPU from helping.
+    This loader keeps weights on the requested device.
+    """
+    device_str = str(device)
+    is_cuda = device_str.startswith("cuda")
+    torch_dtype = torch.float16 if is_cuda else torch.float32
 
     hf_token = _read_hf_token()
     if hf_token:
@@ -79,9 +88,13 @@ def load_pipeline() -> StableDiffusionPipeline:
 
     transformers_verbosity = transformers_logging.get_verbosity()
     diffusers_verbosity = diffusers_logging.get_verbosity()
+    transformers_progress_enabled = transformers_logging.is_progress_bar_enabled()
+    diffusers_progress_enabled = diffusers_logging.is_progress_bar_enabled()
     last_error: Exception | None = None
     transformers_logging.set_verbosity_error()
     diffusers_logging.set_verbosity_error()
+    transformers_logging.disable_progress_bar()
+    diffusers_logging.disable_progress_bar()
     try:
         for local_files_only in (True, False):
             try:
@@ -93,17 +106,22 @@ def load_pipeline() -> StableDiffusionPipeline:
                     low_cpu_mem_usage=False,
                     use_safetensors=False,
                     token=hf_token,
+                    torch_dtype=torch_dtype,
                 )
                 pipe.enable_attention_slicing()
                 pipe.vae.enable_slicing()
                 pipe.set_progress_bar_config(disable=True)
-                return pipe.to("cpu")
+                return pipe.to(device_str)
             except (FileNotFoundError, OSError, ValueError) as exc:
                 last_error = exc
                 continue
     finally:
         transformers_logging.set_verbosity(transformers_verbosity)
         diffusers_logging.set_verbosity(diffusers_verbosity)
+        if transformers_progress_enabled:
+            transformers_logging.enable_progress_bar()
+        if diffusers_progress_enabled:
+            diffusers_logging.enable_progress_bar()
 
     assert last_error is not None
     raise last_error
@@ -136,10 +154,20 @@ def capture_progression(
     prompt: str,
     num_inference_steps: int = DEFAULT_STEPS,
     seed: int = DEFAULT_SEED,
+    *,
+    max_frames: int | None = None,
+    device: str = "cpu",
 ) -> list[Image.Image]:
-    """Run the text-to-image diffusion loop and keep the initial noise plus each frame."""
-    pipe = load_pipeline()
-    generator = torch.Generator(device="cpu").manual_seed(seed)
+    """Run diffusion and return the initial noise plus a sampled progression of frames.
+
+    On CPU, decoding + saving every single step is slow. `max_frames` lets us cap how many
+    intermediate steps we decode/store (final step is always included).
+    """
+    if max_frames is not None and max_frames < 2:
+        raise ValueError("max_frames must be >= 2 when provided (needs noise + final).")
+
+    pipe = load_pipeline(device)
+    generator = torch.Generator(device=device).manual_seed(seed)
 
     latents = randn_tensor(
         _latent_shape(pipe),
@@ -148,10 +176,22 @@ def capture_progression(
         dtype=pipe.unet.dtype,
     )
 
-    latent_history = [latents.detach().cpu().clone()]
+    latent_history = [latents.detach().clone()]
+
+    # callback_on_step_end fires once per denoising step.
+    # We capture step "numbers" 1..num_inference_steps (and always include the final step).
+    capture_stride = 1
+    if max_frames is not None:
+        # noise frame counts as 1, so we can capture at most (max_frames - 1) diffusion steps.
+        # We choose a stride so that the number of captured diffusion steps stays <= that budget.
+        capture_stride = max(1, math.ceil(num_inference_steps / (max_frames - 1)))
 
     def capture_callback(_pipe, _step_index, _timestep, callback_kwargs):
-        latent_history.append(callback_kwargs["latents"].detach().cpu().clone())
+        # _step_index is 0-based for denoising steps; step_number is 1-based.
+        step_number = _step_index + 1
+        should_capture = (step_number % capture_stride == 0) or (step_number == num_inference_steps)
+        if should_capture:
+            latent_history.append(callback_kwargs["latents"].detach().clone())
         return callback_kwargs
 
     with torch.inference_mode():

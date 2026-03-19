@@ -15,12 +15,15 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import unquote, urlparse
 
+import torch
+
 from diffusion_core import (
     DEFAULT_SEED,
     DEFAULT_STEPS,
     MAX_STEPS,
     MIN_STEPS,
     capture_progression,
+    load_pipeline,
     frame_label,
     save_progression_frames,
 )
@@ -33,6 +36,23 @@ HOST = os.environ.get("HOST", "0.0.0.0")
 PORT = int(os.environ.get("PORT", "8000"))
 DEFAULT_PROMPT = "a red bicycle on a rainy street"
 generation_lock = threading.Lock()
+
+DEVICE = os.environ.get("DEVICE")
+if not DEVICE:
+    DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
+
+UI_MAX_FRAMES_RAW = os.environ.get("UI_MAX_FRAMES")
+if UI_MAX_FRAMES_RAW is None:
+    # On GPU, default to showing *all* frames; on CPU keep the old cap.
+    UI_MAX_FRAMES = None if DEVICE.startswith("cuda") else 8
+else:
+    val = UI_MAX_FRAMES_RAW.strip().lower()
+    if val in {"", "all", "none"}:
+        UI_MAX_FRAMES = None
+    else:
+        UI_MAX_FRAMES = int(val)
+
+WARMUP_MODEL = os.environ.get("WARMUP_MODEL", "1").lower() in {"1", "true", "yes", "on"}
 
 
 def json_bytes(payload: dict) -> bytes:
@@ -85,7 +105,13 @@ def run_generation(prompt: str, steps: int) -> dict:
     run_dir.mkdir(parents=True, exist_ok=True)
 
     start = time.perf_counter()
-    frames = capture_progression(cleaned_prompt, steps, DEFAULT_SEED)
+    frames = capture_progression(
+        cleaned_prompt,
+        steps,
+        DEFAULT_SEED,
+        max_frames=UI_MAX_FRAMES,
+        device=DEVICE,
+    )
     assets = save_progression_frames(frames, run_dir)
     elapsed_seconds = round(time.perf_counter() - start, 2)
 
@@ -162,6 +188,10 @@ class NoiseMeaningHandler(BaseHTTPRequestHandler):
 
 
 def main() -> None:
+    if WARMUP_MODEL:
+        print("Warming up diffusion pipeline...", flush=True)
+        # This shifts the "model load" cost away from the first /api/generate response.
+        load_pipeline(DEVICE)
     server = ThreadingHTTPServer((HOST, PORT), NoiseMeaningHandler)
     print(f"Serving on http://{HOST}:{PORT}", flush=True)
     print("Press Ctrl+C to stop.", flush=True)
