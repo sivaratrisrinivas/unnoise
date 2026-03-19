@@ -19,14 +19,16 @@ GitHub **does not** show an “Open in Colab” control on the notebook file pag
 2. **Runtime → Change runtime type → GPU**
 3. Run all cells in order.
 
-Last cell starts `app.py` and calls `output.serve_kernel_port_as_iframe(8000, …)` so you get the UI in the notebook (or a link Colab provides to port 8000).
+Last cell starts `app.py`, **waits until port 8000 accepts connections**, then calls `output.serve_kernel_port_as_iframe(8000, …)`. If the server never binds, it prints the tail of `/tmp/unnoise_app.log`.
 
-**Optional env vars** (set in the last cell before `Popen` if you want):
+**Why you might have seen a blank iframe:** `WARMUP_MODEL=1` runs a full model download/load **before** `app.py` binds to port 8000; a short `sleep(10)` then embeds an empty port. The bundled notebook sets `WARMUP_MODEL=0` so the server starts immediately; the **first Generate** pays the Hugging Face download.
+
+**Optional env vars** (edit the last notebook cell if you want):
 
 | Variable | Meaning |
 |----------|---------|
 | `UI_MAX_FRAMES` | `all` = decode/save every step; or an integer to cap frames |
-| `WARMUP_MODEL` | `1` (default) = load weights at startup; `0` = load on first Generate |
+| `WARMUP_MODEL` | Notebook uses `0` for reliable iframe. `1` = preload at startup (can take many minutes first time). |
 | `DEVICE` | `cuda` on Colab; omit to auto-detect |
 
 **HF downloads:** if Hugging Face asks for auth, set `HF_TOKEN` in Colab (`os.environ["HF_TOKEN"] = "..."`) or add a secret; you can also use a repo-root `.env.local` with `HF_TOKEN=...` (not committed; see `.gitignore`).
