@@ -19,7 +19,7 @@ GitHub **does not** show an “Open in Colab” control on the notebook file pag
 2. **Runtime → Change runtime type → GPU**
 3. Run all cells in order.
 
-Last cell starts `app.py`, **waits until port 8000 accepts connections**, then calls `output.serve_kernel_port_as_window(8000, …)` so the UI opens in a **new browser tab** (not only inside the notebook). If popups are blocked, allow them for Colab or switch to `serve_kernel_port_as_iframe` in the notebook. If the server never binds, it prints the tail of `/tmp/unnoise_app.log`.
+Last cell starts `app.py`, **waits until port 8000 accepts connections**, then prints a **Colab proxy URL** via `google.colab.kernel.proxyPort(8000)` (with a clickable link). **Do not open `https://localhost:8000` on your own PC** — that is your machine, not the Colab VM; Colab’s old `serve_kernel_port_as_window` link is misleading. If the server never binds, the cell prints the tail of `/tmp/unnoise_app.log`. To embed the UI in the notebook, uncomment `serve_kernel_port_as_iframe` in that cell.
 
 **Why you might have seen a blank iframe:** `WARMUP_MODEL=1` runs a full model download/load **before** `app.py` binds to port 8000; a short `sleep(10)` then embeds an empty port. The bundled notebook sets `WARMUP_MODEL=0` so the server starts immediately; the **first Generate** pays the Hugging Face download.
 
